@@ -65,6 +65,11 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState('');
   const [authRole, setAuthRole] = useState('student'); // 'student' or 'teacher'
 
+  // Password reset state
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetOtp, setResetOtp] = useState('');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+
   // Admin current view mode
   const [adminSubTab, setAdminSubTab] = useState('overview'); // 'overview', 'admissions', 'colleges', 'db_explorer'
 
@@ -362,6 +367,57 @@ export default function App() {
   // ----------------------------------------------------
   // Actions
   // ----------------------------------------------------
+  const handleForgotPasswordSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!resetEmail) {
+      showToast("Please enter your email", "warning");
+      return;
+    }
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast("OTP generated! Check your terminal console logs.");
+        setAuthView('verify_otp');
+      } else {
+        showToast(data.error || 'Failed to send reset code', 'danger');
+      }
+    } catch (err) {
+      showToast('Connection error', 'danger');
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (!resetEmail || !resetOtp || !resetNewPassword) {
+      showToast("Please fill all fields", "warning");
+      return;
+    }
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail, otp: resetOtp, newPassword: resetNewPassword })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast("Password reset successful! You can now sign in.");
+        setAuthView('login');
+        setResetEmail('');
+        setResetOtp('');
+        setResetNewPassword('');
+      } else {
+        showToast(data.error || 'Failed to reset password', 'danger');
+      }
+    } catch (err) {
+      showToast('Connection error', 'danger');
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
@@ -743,13 +799,16 @@ export default function App() {
               <label>Password</label>
               <input type="password" className="form-control" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} required placeholder="••••••••" />
             </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-0.75rem', marginBottom: '1.25rem' }}>
+              <span style={{ color: 'var(--primary)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '500' }} onClick={() => { setAuthView('forgot_password'); setResetEmail(authEmail); }}>Forgot Password?</span>
+            </div>
             
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>Sign In</button>
+            <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Sign In</button>
             <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               Don't have an account? <span style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: '600' }} onClick={() => setAuthView('register')}>Register</span>
             </p>
           </form>
-        ) : (
+        ) : authView === 'register' ? (
           <form onSubmit={handleRegister}>
             <h2 style={{ fontSize: '1.8rem', textAlign: 'center', marginBottom: '0.5rem' }}>Create Account</h2>
             <p style={{ color: 'var(--text-muted)', textAlign: 'center', fontSize: '0.9rem', marginBottom: '2rem' }}>Register into the EduConnect workspace</p>
@@ -777,6 +836,42 @@ export default function App() {
             <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>Register</button>
             <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               Already registered? <span style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: '600' }} onClick={() => setAuthView('login')}>Sign In</span>
+            </p>
+          </form>
+        ) : authView === 'forgot_password' ? (
+          <form onSubmit={handleForgotPasswordSubmit}>
+            <h2 style={{ fontSize: '1.8rem', textAlign: 'center', marginBottom: '0.5rem' }}>Reset Password</h2>
+            <p style={{ color: 'var(--text-muted)', textAlign: 'center', fontSize: '0.9rem', marginBottom: '2rem' }}>Enter your email to receive a simulated verification OTP code</p>
+            
+            <div className="form-group">
+              <label>Email address</label>
+              <input type="email" className="form-control" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} required placeholder="name@example.com" />
+            </div>
+            
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>Send Verification OTP</button>
+            <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Remember your password? <span style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: '600' }} onClick={() => setAuthView('login')}>Sign In</span>
+            </p>
+          </form>
+        ) : (
+          <form onSubmit={handleResetPasswordSubmit}>
+            <h2 style={{ fontSize: '1.8rem', textAlign: 'center', marginBottom: '0.5rem' }}>Verify OTP Code</h2>
+            <p style={{ color: 'var(--text-muted)', textAlign: 'center', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+              We sent a 6-digit OTP code to **{resetEmail}** (Check your backend console log output!).
+            </p>
+            
+            <div className="form-group">
+              <label>6-Digit OTP Code</label>
+              <input type="text" maxLength="6" className="form-control" value={resetOtp} onChange={(e) => setResetOtp(e.target.value)} required placeholder="123456" style={{ letterSpacing: '0.5em', textAlign: 'center', fontSize: '1.2rem', fontWeight: 'bold' }} />
+            </div>
+            <div className="form-group">
+              <label>New Password</label>
+              <input type="password" className="form-control" value={resetNewPassword} onChange={(e) => setResetNewPassword(e.target.value)} required placeholder="••••••••" />
+            </div>
+            
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>Reset Password</button>
+            <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Didn't receive code? <span style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: '600' }} onClick={handleForgotPasswordSubmit}>Resend</span> or <span style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: '600' }} onClick={() => setAuthView('login')}>Cancel</span>
             </p>
           </form>
         )}

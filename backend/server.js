@@ -8,6 +8,9 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = 'educonnect_super_secret_key_12345';
 
+// Temporary store for password reset OTPs (email -> { otp, expires })
+const otpStore = new Map();
+
 app.use(cors());
 app.use(express.json());
 
@@ -107,6 +110,58 @@ app.post('/api/auth/login', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required' });
+
+  try {
+    const user = await db.get("SELECT * FROM Users WHERE email = ?", [email]);
+    if (!user) {
+      return res.status(400).json({ error: 'No user registered with this email address' });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = Date.now() + 10 * 60 * 1000;
+    otpStore.set(email.toLowerCase(), { otp, expires });
+
+    console.log("\n=========================================================");
+    console.log(`[MAIL SIMULATOR] To: ${email}`);
+    console.log("Subject: EduConnect Password Reset OTP Verification");
+    console.log(`Your 6-digit verification code is: ${otp}`);
+    console.log("(This code will expire in 10 minutes)");
+    console.log("=========================================================\n");
+
+    res.json({ message: 'Verification OTP sent to your email (simulated in backend console logs).' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+  if (!email || !otp || !newPassword) {
+    return res.status(400).json({ error: 'Email, OTP, and new password are required' });
+  }
+
+  const record = otpStore.get(email.toLowerCase());
+  if (!record || record.otp !== otp || Date.now() > record.expires) {
+    return res.status(400).json({ error: 'Invalid or expired OTP code' });
+  }
+
+  try {
+    const salt = bcrypt.genSaltSync(10);
+    const hashedPassword = bcrypt.hashSync(newPassword, salt);
+
+    await db.run("UPDATE Users SET password = ? WHERE email = ?", [hashedPassword, email]);
+    otpStore.delete(email.toLowerCase());
+
+    res.json({ message: 'Password reset successful!' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
