@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Backend Server",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "${workspaceRoot}/backend",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Launch Frontend Client",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceRoot}/frontend"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Launch Full Stack (EduConnect)",
+      "configurations": ["Launch Backend Server", "Launch Frontend Client"]
+    }
+  ]
+}

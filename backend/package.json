@@ -1,0 +1,17 @@
+{
+  "name": "educonnect-backend",
+  "version": "1.0.0",
+  "description": "EduConnect Platform - Backend Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "sqlite3": "^5.1.7"
+  }
+}
