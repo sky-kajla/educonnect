@@ -1654,37 +1654,87 @@ export default function App() {
             <IconColleges /> Colleges
           </div>
           
-          {user && user.role === 'student' && (
-            <>
-              <div className={`sidebar-item ${currentTab === 'admissions' ? 'active' : ''}`} onClick={() => setCurrentTab('admissions')}>
-                <IconAdmissions /> Referrals
-              </div>
-              <div className={`sidebar-item ${currentTab === 'marketplace' ? 'active' : ''}`} onClick={() => setCurrentTab('marketplace')}>
-                <IconMarket /> Marketplace
-              </div>
-              <div className={`sidebar-item ${currentTab === 'classes' ? 'active' : ''}`} onClick={() => setCurrentTab('classes')}>
-                <IconClass /> Virtual Class
-              </div>
-            </>
-          )}
+          <div className={`sidebar-item ${currentTab === 'admissions' ? 'active' : ''}`} onClick={() => {
+            if (!user) {
+              showToast("Please sign in to access referrals.", "warning");
+              setCurrentTab("auth");
+              setAuthView("login");
+            } else if (user.role === 'student' || user.role === 'admin') {
+              setCurrentTab('admissions');
+            } else {
+              showToast("Only students/admins can access referrals.", "warning");
+            }
+          }}>
+            <IconAdmissions /> Referrals
+          </div>
 
-          {user && user.role === 'teacher' && (
-            <div className={`sidebar-item ${currentTab === 'teacher' ? 'active' : ''}`} onClick={() => setCurrentTab('teacher')}>
-              <IconClass /> Teacher Console
-            </div>
-          )}
+          <div className={`sidebar-item ${currentTab === 'marketplace' ? 'active' : ''}`} onClick={() => {
+            if (!user) {
+              showToast("Please sign in to access the course marketplace.", "warning");
+              setCurrentTab("auth");
+              setAuthView("login");
+            } else if (user.role === 'student' || user.role === 'admin') {
+              setCurrentTab('marketplace');
+            } else {
+              showToast("Only students/admins can access the course marketplace.", "warning");
+            }
+          }}>
+            <IconMarket /> Marketplace
+          </div>
 
-          {user && user.role === 'admin' && (
-            <div className={`sidebar-item ${currentTab === 'admin' ? 'active' : ''}`} onClick={() => setCurrentTab('admin')}>
-              <IconLedger /> Admin Panel
-            </div>
-          )}
+          <div className={`sidebar-item ${currentTab === 'classes' ? 'active' : ''}`} onClick={() => {
+            if (!user) {
+              showToast("Please sign in to access online classes.", "warning");
+              setCurrentTab("auth");
+              setAuthView("login");
+            } else if (user.role === 'student' || user.role === 'teacher') {
+              setCurrentTab('classes');
+            } else {
+              showToast("Admins manage classes via database consoles.", "warning");
+            }
+          }}>
+            <IconClass /> Virtual Class
+          </div>
 
-          {user && (
-            <div className={`sidebar-item ${currentTab === 'payments' ? 'active' : ''}`} onClick={() => setCurrentTab('payments')}>
-              <IconLedger /> Wallet Ledger
-            </div>
-          )}
+          <div className={`sidebar-item ${currentTab === 'teacher' ? 'active' : ''}`} onClick={() => {
+            if (!user) {
+              showToast("Please sign in to access the Teacher Console.", "warning");
+              setCurrentTab("auth");
+              setAuthView("login");
+            } else if (user.role === 'teacher') {
+              setCurrentTab('teacher');
+            } else {
+              showToast("Only teachers can access the Teacher Console.", "warning");
+            }
+          }}>
+            <IconClass /> Teacher Console
+          </div>
+
+          <div className={`sidebar-item ${currentTab === 'admin' ? 'active' : ''}`} onClick={() => {
+            if (!user) {
+              showToast("Please sign in to access the Admin Panel.", "warning");
+              setCurrentTab("auth");
+              setAuthView("login");
+            } else if (user.role === 'admin') {
+              setCurrentTab('admin');
+            } else {
+              showToast("Only administrators can access the Admin Panel.", "warning");
+            }
+          }}>
+            <IconLedger /> Admin Panel
+          </div>
+
+          <div className={`sidebar-item ${currentTab === 'payments' ? 'active' : ''}`} onClick={() => {
+            if (!user) {
+              showToast("Please sign in to view transaction history.", "warning");
+              setCurrentTab("auth");
+              setAuthView("login");
+            } else {
+              setCurrentTab('payments');
+            }
+          }}>
+            <IconLedger /> Wallet Ledger
+          </div>
         </nav>
 
         <div className="sidebar-footer">
