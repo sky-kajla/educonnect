@@ -58,7 +58,7 @@ app.post('/api/auth/register', async (req, res) => {
 
     const salt = bcrypt.genSaltSync(10);
     const hashedPassword = bcrypt.hashSync(password, salt);
-    const startingBalance = role === 'student' ? 5000.00 : 0.0; // Gift starting balance for students to buy courses/refer
+    const startingBalance = role === 'student' ? 5000.00 : 0.0;
 
     const result = await db.run(
       "INSERT INTO Users (name, email, password, role, wallet_balance) VALUES (?, ?, ?, ?, ?)",
@@ -139,7 +139,6 @@ app.post('/api/auth/me', authenticateToken, async (req, res) => {
   }
 });
 
-
 // ----------------------------------------------------
 // Colleges & Courses Routes
 // ----------------------------------------------------
@@ -148,7 +147,6 @@ app.get('/api/colleges', async (req, res) => {
     const colleges = await db.all("SELECT * FROM Colleges");
     const courses = await db.all("SELECT * FROM Courses");
 
-    // Nest courses in colleges
     const data = colleges.map(col => ({
       ...col,
       courses: courses.filter(crs => crs.college_id === col.college_id)
@@ -236,7 +234,7 @@ app.get('/api/admissions', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/admissions/:id/status', authenticateToken, requireAdmin, async (req, res) => {
-  const { status } = req.body; // 'Approved' or 'Rejected'
+  const { status } = req.body;
   const admissionId = parseInt(req.params.id);
 
   if (!['Approved', 'Rejected'].includes(status)) {
@@ -253,15 +251,11 @@ app.post('/api/admissions/:id/status', authenticateToken, requireAdmin, async (r
 
     await db.run("UPDATE Admissions SET status = ? WHERE admission_id = ?", [status, admissionId]);
 
-    // If Approved, pay commission to referrer
     if (status === 'Approved') {
-      // Find course to get commission amount
       const course = await db.get("SELECT commission, course_name FROM Courses WHERE course_id = ?", [admission.course_id]);
       if (course && course.commission > 0) {
-        // Credit referrer wallet
         await db.run("UPDATE Users SET wallet_balance = wallet_balance + ? WHERE user_id = ?", [course.commission, admission.referrer_id]);
 
-        // Insert payment log
         const today = new Date().toISOString().split('T')[0];
         await db.run(
           "INSERT INTO Payments (user_id, amount, type, date) VALUES (?, ?, ?, ?)",
@@ -325,7 +319,6 @@ app.post('/api/enrollments', authenticateToken, async (req, res) => {
     const course = await db.get("SELECT * FROM TeachingCourses WHERE course_id = ?", [course_id]);
     if (!course) return res.status(404).json({ error: 'Course not found' });
 
-    // Check if already enrolled
     const existing = await db.get(
       "SELECT * FROM Enrollments WHERE student_id = ? AND course_id = ?",
       [req.user.user_id, course_id]
@@ -334,26 +327,18 @@ app.post('/api/enrollments', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'You are already enrolled in this course' });
     }
 
-    // Check student wallet balance
     const student = await db.get("SELECT wallet_balance FROM Users WHERE user_id = ?", [req.user.user_id]);
     if (student.wallet_balance < course.price) {
       return res.status(400).json({ error: 'Insufficient wallet balance' });
     }
 
-    // Process Transaction:
-    // 1. Deduct money from student
     await db.run("UPDATE Users SET wallet_balance = wallet_balance - ? WHERE user_id = ?", [course.price, req.user.user_id]);
-
-    // 2. Add money to teacher
     await db.run("UPDATE Users SET wallet_balance = wallet_balance + ? WHERE user_id = ?", [course.price, course.teacher_id]);
-
-    // 3. Create Enrollment
     await db.run(
       "INSERT INTO Enrollments (student_id, course_id, payment_status) VALUES (?, ?, 'Paid')",
       [req.user.user_id, course_id]
     );
 
-    // 4. Record Payments
     const today = new Date().toISOString().split('T')[0];
     await db.run(
       "INSERT INTO Payments (user_id, amount, type, date) VALUES (?, ?, ?, ?)",
@@ -372,7 +357,7 @@ app.post('/api/enrollments', authenticateToken, async (req, res) => {
 
 app.get('/api/enrollments', authenticateToken, async (req, res) => {
   try {
-    const enrollments = await db.all("SELECT * FROM Enrollments WHERE student_id = ?", [req.user.user_id]);
+    const enrollments = await db.all("SELECT e.*, tc.title, tc.teacher_id FROM Enrollments e JOIN TeachingCourses tc ON e.course_id = tc.course_id WHERE e.student_id = ?", [req.user.user_id]);
     res.json(enrollments);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -392,6 +377,162 @@ app.get('/api/enrollments/teacher', authenticateToken, requireTeacher, async (re
     res.json(enrollments);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ----------------------------------------------------
+// Online Classes APIs
+// ----------------------------------------------------
+app.get('/api/classes', authenticateToken, async (req, res) => {
+  try {
+    let classes;
+    if (req.user.role === 'admin') {
+      classes = await db.all(
+        `SELECT c.*, tc.title as course_title, u.name as teacher_name 
+         FROM OnlineClasses c 
+         JOIN TeachingCourses tc ON c.course_id = tc.course_id 
+         JOIN Users u ON tc.teacher_id = u.user_id`
+      );
+    } else if (req.user.role === 'teacher') {
+      classes = await db.all(
+        `SELECT c.*, tc.title as course_title 
+         FROM OnlineClasses c 
+         JOIN TeachingCourses tc ON c.course_id = tc.course_id 
+         WHERE tc.teacher_id = ?`,
+        [req.user.user_id]
+      );
+    } else {
+      // Students see classes for courses they are enrolled in
+      classes = await db.all(
+        `SELECT c.*, tc.title as course_title, u.name as teacher_name 
+         FROM OnlineClasses c 
+         JOIN TeachingCourses tc ON c.course_id = tc.course_id 
+         JOIN Enrollments e ON tc.course_id = e.course_id 
+         JOIN Users u ON tc.teacher_id = u.user_id 
+         WHERE e.student_id = ?`,
+        [req.user.user_id]
+      );
+    }
+    res.json(classes);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/classes', authenticateToken, requireTeacher, async (req, res) => {
+  const { course_id, title, description, class_date, meet_link } = req.body;
+  if (!course_id || !title || !description || !class_date || !meet_link) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+  try {
+    // Check if teacher owns the course
+    const course = await db.get("SELECT * FROM TeachingCourses WHERE course_id = ? AND teacher_id = ?", [course_id, req.user.user_id]);
+    if (!course) {
+      return res.status(403).json({ error: 'You are not authorized to schedule classes for this course' });
+    }
+
+    const result = await db.run(
+      "INSERT INTO OnlineClasses (course_id, title, description, class_date, meet_link, status) VALUES (?, ?, ?, ?, ?, 'Scheduled')",
+      [course_id, title, description, class_date, meet_link]
+    );
+
+    res.status(201).json({ class_id: result.lastID, course_id, title, description, class_date, meet_link, status: 'Scheduled' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/classes/:id/status', authenticateToken, requireTeacher, async (req, res) => {
+  const { status } = req.body; // 'Scheduled', 'Live', 'Completed'
+  const classId = parseInt(req.params.id);
+
+  if (!['Scheduled', 'Live', 'Completed'].includes(status)) {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
+
+  try {
+    const cls = await db.get(
+      `SELECT c.* FROM OnlineClasses c 
+       JOIN TeachingCourses tc ON c.course_id = tc.course_id 
+       WHERE c.class_id = ? AND tc.teacher_id = ?`,
+      [classId, req.user.user_id]
+    );
+    if (!cls) return res.status(404).json({ error: 'Class not found' });
+
+    await db.run("UPDATE OnlineClasses SET status = ? WHERE class_id = ?", [status, classId]);
+    res.json({ message: `Class status updated to ${status}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ----------------------------------------------------
+// Admin Database Explorer APIs
+// ----------------------------------------------------
+const TABLE_WHITELIST = ['users', 'colleges', 'courses', 'admissions', 'teachingcourses', 'enrollments', 'payments', 'onlineclasses', 'online_classes'];
+const TABLE_PRIMARY_KEYS = {
+  'users': 'user_id',
+  'colleges': 'college_id',
+  'courses': 'course_id',
+  'admissions': 'admission_id',
+  'teachingcourses': 'course_id',
+  'teaching_courses': 'course_id',
+  'enrollments': 'enrollment_id',
+  'payments': 'payment_id',
+  'onlineclasses': 'class_id',
+  'online_classes': 'class_id'
+};
+
+app.get('/api/admin/db/tables', authenticateToken, requireAdmin, (req, res) => {
+  res.json(TABLE_WHITELIST);
+});
+
+app.get('/api/admin/db/tables/:name', authenticateToken, requireAdmin, async (req, res) => {
+  const tableName = req.params.name.toLowerCase();
+  if (!TABLE_WHITELIST.includes(tableName)) {
+    return res.status(400).json({ error: 'Invalid table name' });
+  }
+  
+  // Safe since it's whitelisted
+  const sql = `SELECT * FROM ${tableName}`;
+  try {
+    const rows = await db.all(sql);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/admin/db/tables/:name/:id', authenticateToken, requireAdmin, async (req, res) => {
+  const tableName = req.params.name.toLowerCase();
+  const id = req.params.id;
+
+  if (!TABLE_WHITELIST.includes(tableName)) {
+    return res.status(400).json({ error: 'Invalid table name' });
+  }
+
+  const pkField = TABLE_PRIMARY_KEYS[tableName];
+  if (!pkField) {
+    return res.status(400).json({ error: 'Primary key mapping not found' });
+  }
+
+  try {
+    const changes = await db.deleteRow(tableName, pkField, id);
+    res.json({ message: `Successfully deleted ${changes} row(s).` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/db/query', authenticateToken, requireAdmin, async (req, res) => {
+  const { sql } = req.body;
+  if (!sql) return res.status(400).json({ error: 'SQL query statement is required' });
+
+  try {
+    const rows = await db.query(sql);
+    res.json(rows);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 });
 

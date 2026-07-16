@@ -52,13 +52,18 @@ const jsonDb = {
     admissions: [],
     teaching_courses: [],
     enrollments: [],
-    payments: []
+    payments: [],
+    online_classes: []
   },
   load() {
     if (fs.existsSync(JSON_DB_PATH)) {
       try {
         const fileContent = fs.readFileSync(JSON_DB_PATH, 'utf8');
         this.data = JSON.parse(fileContent);
+        // Ensure new table is present
+        if (!this.data.online_classes) {
+          this.data.online_classes = [];
+        }
       } catch (e) {
         console.error('Error parsing database.json:', e);
       }
@@ -168,7 +173,6 @@ const db = {
   // Returns all matching rows
   async all(sql, params = []) {
     if (DB_TYPE === 'mysql') {
-      // For JOIN query simulations in list endpoints, we can run raw execute
       const [rows] = await mysqlPool.execute(sql, params);
       return rows;
     }
@@ -179,6 +183,53 @@ const db = {
       sqliteInstance.all(sql, params, (err, rows) => {
         if (err) reject(err);
         else resolve(rows);
+      });
+    });
+  },
+
+  // Raw Query Runner (For Admin SQL Console)
+  async query(sql) {
+    if (DB_TYPE === 'mysql') {
+      const [rows] = await mysqlPool.query(sql);
+      return rows;
+    }
+    if (useJsonFallback) {
+      throw new Error("Raw SQL query execution is not supported in local JSON fallback mode.");
+    }
+    return new Promise((resolve, reject) => {
+      sqliteInstance.all(sql, [], (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+      });
+    });
+  },
+
+  // Table rows delete helper (For Admin Database Explorer)
+  async deleteRow(tableName, primaryKeyName, id) {
+    // Basic SQL Injection protection for dynamic table/column names in admin actions
+    const safeTable = tableName.replace(/[^a-zA-Z0-9_]/g, '');
+    const safeKey = primaryKeyName.replace(/[^a-zA-Z0-9_]/g, '');
+    const sql = `DELETE FROM ${safeTable} WHERE ${safeKey} = ?`;
+
+    if (DB_TYPE === 'mysql') {
+      const [result] = await mysqlPool.execute(sql, [id]);
+      return result.affectedRows;
+    }
+    if (useJsonFallback) {
+      jsonDb.load();
+      const listName = getJsonListName(tableName);
+      if (listName && jsonDb.data[listName]) {
+        const lengthBefore = jsonDb.data[listName].length;
+        jsonDb.data[listName] = jsonDb.data[listName].filter(row => row[safeKey] !== parseInt(id) && row[safeKey] !== id);
+        jsonDb.save();
+        return lengthBefore - jsonDb.data[listName].length;
+      }
+      return 0;
+    }
+    return new Promise((resolve, reject) => {
+      sqliteInstance.run(sql, [id], function(err) {
+        if (err) reject(err);
+        else resolve(this.changes);
       });
     });
   }
@@ -242,6 +293,16 @@ function createSqliteTables() {
       type TEXT NOT NULL,
       date TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS OnlineClasses (
+      class_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      course_id INTEGER,
+      title TEXT NOT NULL,
+      description TEXT,
+      class_date TEXT NOT NULL,
+      meet_link TEXT NOT NULL,
+      status TEXT DEFAULT 'Scheduled',
+      FOREIGN KEY (course_id) REFERENCES TeachingCourses(course_id) ON DELETE CASCADE
     )`
   ];
 
@@ -310,6 +371,16 @@ async function createMysqlTables() {
       type VARCHAR(255) NOT NULL,
       date VARCHAR(50) NOT NULL,
       FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS OnlineClasses (
+      class_id INT PRIMARY KEY AUTO_INCREMENT,
+      course_id INT,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      class_date VARCHAR(50) NOT NULL,
+      meet_link VARCHAR(255) NOT NULL,
+      status VARCHAR(50) DEFAULT 'Scheduled',
+      FOREIGN KEY (course_id) REFERENCES TeachingCourses(course_id) ON DELETE CASCADE
     )`
   ];
 
@@ -372,6 +443,11 @@ async function seedData() {
   await db.run("INSERT INTO Payments (user_id, amount, type, date) VALUES (?, ?, ?, ?)", [4, 1500.00, 'Referral Commission', '2026-07-14']);
   await db.run("INSERT INTO Payments (user_id, amount, type, date) VALUES (?, ?, ?, ?)", [2, 1800.00, 'Course Sale Earnings', '2026-07-15']);
   await db.run("INSERT INTO Payments (user_id, amount, type, date) VALUES (?, ?, ?, ?)", [3, -99.99, 'Course Purchase', '2026-07-15']);
+
+  // Online Classes
+  const today = new Date().toISOString().split('T')[0];
+  await db.run("INSERT INTO OnlineClasses (course_id, title, description, class_date, meet_link, status) VALUES (?, ?, ?, ?, ?, ?)", [1, 'Lecture 1: Intro to React hooks', 'Getting started with useState and useEffect in Vite.', `${today} 18:00`, 'https://meet.google.com/abc-defg-hij', 'Scheduled']);
+  await db.run("INSERT INTO OnlineClasses (course_id, title, description, class_date, meet_link, status) VALUES (?, ?, ?, ?, ?, ?)", [1, 'Lecture 2: Custom Hooks & State Management', 'Mastering context API and creating custom React hooks.', `${today} 20:00`, 'https://meet.google.com/qwe-rtyu-iop', 'Live']);
 }
 
 // ----------------------------------------------------
@@ -425,7 +501,32 @@ function seedJsonData() {
     { payment_id: 3, user_id: 3, amount: -99.99, type: 'Course Purchase', date: '2026-07-15' }
   ];
 
+  const today = new Date().toISOString().split('T')[0];
+  jsonDb.data.online_classes = [
+    { class_id: 1, course_id: 1, title: 'Lecture 1: Intro to React hooks', description: 'Getting started with useState and useEffect in Vite.', class_date: `${today} 18:00`, meet_link: 'https://meet.google.com/abc-defg-hij', status: 'Scheduled' },
+    { class_id: 2, course_id: 1, title: 'Lecture 2: Custom Hooks & State Management', description: 'Mastering context API and creating custom React hooks.', class_date: `${today} 20:00`, meet_link: 'https://meet.google.com/qwe-rtyu-iop', status: 'Live' }
+  ];
+
   jsonDb.save();
+}
+
+// ----------------------------------------------------
+// Helper mapping tables to JSON database keys
+// ----------------------------------------------------
+function getJsonListName(tableName) {
+  const mapping = {
+    'users': 'users',
+    'colleges': 'colleges',
+    'courses': 'courses',
+    'admissions': 'admissions',
+    'teachingcourses': 'teaching_courses',
+    'teaching_courses': 'teaching_courses',
+    'enrollments': 'enrollments',
+    'payments': 'payments',
+    'onlineclasses': 'online_classes',
+    'online_classes': 'online_classes'
+  };
+  return mapping[tableName.toLowerCase()];
 }
 
 // ----------------------------------------------------
@@ -524,6 +625,22 @@ function runJson(sql, params) {
     return Promise.resolve({ lastID: course_id, changes: 1 });
   }
 
+  if (sqlLower.startsWith('insert into onlineclasses') || sqlLower.startsWith('insert into online_classes')) {
+    const class_id = jsonDb.data.online_classes.length > 0 ? Math.max(...jsonDb.data.online_classes.map(c => c.class_id)) + 1 : 1;
+    jsonDb.data.online_classes.push({
+      class_id,
+      course_id: params[0],
+      title: params[1],
+      description: params[2],
+      class_date: params[3],
+      meet_link: params[4],
+      status: params[5] || 'Scheduled'
+    });
+    jsonDb.save();
+    return Promise.resolve({ lastID: class_id, changes: 1 });
+  }
+
+  // Updates
   if (sqlLower.startsWith('update users set wallet_balance')) {
     const isAdditive = sqlLower.includes('wallet_balance +') || sqlLower.includes('wallet_balance+');
     const userIdIndex = params.length - 1;
@@ -549,6 +666,18 @@ function runJson(sql, params) {
     const admission = jsonDb.data.admissions.find(a => a.admission_id === admissionId);
     if (admission) {
       admission.status = status;
+      jsonDb.save();
+      return Promise.resolve({ changes: 1 });
+    }
+    return Promise.resolve({ changes: 0 });
+  }
+
+  if (sqlLower.startsWith('update onlineclasses set status') || sqlLower.startsWith('update online_classes set status')) {
+    const status = params[0];
+    const classId = params[1];
+    const cls = jsonDb.data.online_classes.find(c => c.class_id === classId);
+    if (cls) {
+      cls.status = status;
       jsonDb.save();
       return Promise.resolve({ changes: 1 });
     }
@@ -590,12 +719,28 @@ function getJson(sql, params) {
     return Promise.resolve(course || null);
   }
 
+  if (sqlLower.includes('from onlineclasses where class_id =') || sqlLower.includes('from online_classes where class_id =')) {
+    const id = params[0];
+    const cls = jsonDb.data.online_classes.find(c => c.class_id === id);
+    return Promise.resolve(cls || null);
+  }
+
   return Promise.resolve(null);
 }
 
 function allJson(sql, params) {
   jsonDb.load();
   const sqlLower = sql.toLowerCase().trim();
+
+  // General Database Explorer queries
+  if (sqlLower === 'select * from users') return Promise.resolve(jsonDb.data.users);
+  if (sqlLower === 'select * from colleges') return Promise.resolve(jsonDb.data.colleges);
+  if (sqlLower === 'select * from courses') return Promise.resolve(jsonDb.data.courses);
+  if (sqlLower === 'select * from admissions') return Promise.resolve(jsonDb.data.admissions);
+  if (sqlLower === 'select * from teachingcourses' || sqlLower === 'select * from teaching_courses') return Promise.resolve(jsonDb.data.teaching_courses);
+  if (sqlLower === 'select * from enrollments') return Promise.resolve(jsonDb.data.enrollments);
+  if (sqlLower === 'select * from payments') return Promise.resolve(jsonDb.data.payments);
+  if (sqlLower === 'select * from onlineclasses' || sqlLower === 'select * from online_classes') return Promise.resolve(jsonDb.data.online_classes);
 
   if (sqlLower.includes('select * from users')) {
     return Promise.resolve(jsonDb.data.users);
@@ -684,6 +829,17 @@ function allJson(sql, params) {
       };
     });
     return Promise.resolve(joinedPayments);
+  }
+
+  if (sqlLower.includes('from onlineclasses') || sqlLower.includes('from online_classes')) {
+    const joinedClasses = jsonDb.data.online_classes.map(cls => {
+      const tc = jsonDb.data.teaching_courses.find(c => c.course_id === cls.course_id) || {};
+      return {
+        ...cls,
+        course_title: tc.title
+      };
+    });
+    return Promise.resolve(joinedClasses);
   }
 
   return Promise.resolve([]);
