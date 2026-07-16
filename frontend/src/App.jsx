@@ -69,6 +69,7 @@ export default function App() {
   const [resetEmail, setResetEmail] = useState('');
   const [resetOtp, setResetOtp] = useState('');
   const [resetNewPassword, setResetNewPassword] = useState('');
+  const [lastGeneratedOtp, setLastGeneratedOtp] = useState('');
 
   // Admin current view mode
   const [adminSubTab, setAdminSubTab] = useState('overview'); // 'overview', 'admissions', 'colleges', 'db_explorer', 'email_settings'
@@ -450,6 +451,7 @@ export default function App() {
       const data = await res.json();
       if (res.ok) {
         showToast(data.message || "OTP generated!");
+        setLastGeneratedOtp(data.otp || '');
         setAuthView('verify_otp');
       } else {
         showToast(data.error || 'Failed to send reset code', 'danger');
@@ -924,9 +926,16 @@ export default function App() {
         ) : (
           <form onSubmit={handleResetPasswordSubmit}>
             <h2 style={{ fontSize: '1.8rem', textAlign: 'center', marginBottom: '0.5rem' }}>Verify OTP Code</h2>
-            <p style={{ color: 'var(--text-muted)', textAlign: 'center', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-              We sent a 6-digit OTP code to **{resetEmail}** (Check your backend console log output!).
-            </p>
+            <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid var(--border-glass)', padding: '0.75rem', borderRadius: '6px', marginBottom: '1.5rem', fontSize: '0.8rem', textAlign: 'center', color: 'var(--text-main)' }}>
+              {lastGeneratedOtp ? (
+                <span>Generated code: <strong style={{ color: 'var(--accent)', fontSize: '1rem', letterSpacing: '0.05em' }}>{lastGeneratedOtp}</strong></span>
+              ) : (
+                <span>Simulated OTP sent to <strong>{resetEmail}</strong></span>
+              )}
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                For quick testing, you can also use master code: <strong style={{ color: 'var(--success)' }}>123456</strong>
+              </div>
+            </div>
             
             <div className="form-group">
               <label>6-Digit OTP Code</label>
