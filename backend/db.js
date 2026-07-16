@@ -2,21 +2,43 @@ const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 
+// Load environment variables from .env file if it exists
+const ENV_PATH = path.join(__dirname, '..', '.env');
+if (fs.existsSync(ENV_PATH)) {
+  try {
+    const envContent = fs.readFileSync(ENV_PATH, 'utf8');
+    envContent.split('\n').forEach(line => {
+      const parts = line.trim().split('=');
+      if (parts.length >= 2 && !line.startsWith('#')) {
+        const key = parts[0].trim();
+        const value = parts.slice(1).join('=').trim().replace(/^['"]|['"]$/g, '');
+        process.env[key] = value;
+      }
+    });
+  } catch (e) {
+    console.error('Error reading .env file:', e);
+  }
+}
+
+const DB_TYPE = process.env.DB_TYPE || (process.env.DB_HOST ? 'mysql' : 'sqlite');
+
 const DB_PATH = path.join(__dirname, 'database.sqlite');
 const JSON_DB_PATH = path.join(__dirname, 'database.json');
 
-let dbInstance = null;
+let mysqlPool = null;
+let sqliteInstance = null;
 let useJsonFallback = false;
 
-// We will attempt to load sqlite3. If it fails (due to build errors on some Windows environments),
-// we fall back to a JSON file database that mimics SQLite behavior.
+// Attempt to load sqlite3 for SQLite mode
 let sqlite3;
-try {
-  sqlite3 = require('sqlite3').verbose();
-  console.log('SQLite3 loaded successfully.');
-} catch (err) {
-  console.warn('sqlite3 could not be loaded. Falling back to JSON-based state database.');
-  useJsonFallback = true;
+if (DB_TYPE === 'sqlite') {
+  try {
+    sqlite3 = require('sqlite3').verbose();
+    console.log('SQLite3 module loaded successfully.');
+  } catch (err) {
+    console.warn('sqlite3 module could not be loaded. Falling back to JSON-based state database.');
+    useJsonFallback = true;
+  }
 }
 
 // ----------------------------------------------------
@@ -50,42 +72,76 @@ const jsonDb = {
 };
 
 // ----------------------------------------------------
-// DB Controller Interface
+// Database Controller Interface
 // ----------------------------------------------------
 const db = {
   init() {
     return new Promise(async (resolve, reject) => {
-      if (useJsonFallback) {
-        jsonDb.load();
-        await seedJsonData();
-        console.log('JSON Database initialized and seeded.');
-        resolve();
+      if (DB_TYPE === 'mysql') {
+        try {
+          const mysql = require('mysql2/promise');
+          console.log(`Connecting to MySQL database at ${process.env.DB_HOST || 'localhost'}...`);
+          
+          mysqlPool = mysql.createPool({
+            host: process.env.DB_HOST || 'localhost',
+            port: parseInt(process.env.DB_PORT || '3306'),
+            user: process.env.DB_USER || 'root',
+            password: process.env.DB_PASSWORD || '',
+            database: process.env.DB_NAME || 'educonnect',
+            waitForConnections: true,
+            connectionLimit: 10,
+            queueLimit: 0
+          });
+          
+          // Test connection
+          await mysqlPool.query("SELECT 1");
+          console.log('Connected to MySQL successfully.');
+          
+          await createMysqlTables();
+          await seedData();
+          resolve();
+        } catch (err) {
+          console.error('MySQL connection failed. Check your credentials in .env.', err);
+          reject(err);
+        }
       } else {
-        dbInstance = new sqlite3.Database(DB_PATH, (err) => {
-          if (err) {
-            console.error('Database connection failed, switching to JSON fallback:', err);
-            useJsonFallback = true;
-            jsonDb.load();
-            seedJsonData().then(resolve).catch(reject);
-          } else {
-            console.log('Connected to SQLite database.');
-            createSqliteTables()
-              .then(() => seedSqliteData())
-              .then(resolve)
-              .catch(reject);
-          }
-        });
+        // SQLite or JSON mode
+        if (useJsonFallback) {
+          jsonDb.load();
+          await seedData();
+          console.log('JSON Database initialized and seeded.');
+          resolve();
+        } else {
+          sqliteInstance = new sqlite3.Database(DB_PATH, (err) => {
+            if (err) {
+              console.error('SQLite connection failed, switching to JSON fallback:', err);
+              useJsonFallback = true;
+              jsonDb.load();
+              seedData().then(resolve).catch(reject);
+            } else {
+              console.log('Connected to SQLite database.');
+              createSqliteTables()
+                .then(() => seedData())
+                .then(resolve)
+                .catch(reject);
+            }
+          });
+        }
       }
     });
   },
 
   // Runs a query that doesn't return rows (INSERT, UPDATE, DELETE)
-  run(sql, params = []) {
+  async run(sql, params = []) {
+    if (DB_TYPE === 'mysql') {
+      const [result] = await mysqlPool.execute(sql, params);
+      return { lastID: result.insertId, changes: result.affectedRows };
+    }
     if (useJsonFallback) {
       return runJson(sql, params);
     }
     return new Promise((resolve, reject) => {
-      dbInstance.run(sql, params, function (err) {
+      sqliteInstance.run(sql, params, function (err) {
         if (err) reject(err);
         else resolve({ lastID: this.lastID, changes: this.changes });
       });
@@ -93,12 +149,16 @@ const db = {
   },
 
   // Returns the first matching row
-  get(sql, params = []) {
+  async get(sql, params = []) {
+    if (DB_TYPE === 'mysql') {
+      const [rows] = await mysqlPool.execute(sql, params);
+      return rows[0] || null;
+    }
     if (useJsonFallback) {
       return getJson(sql, params);
     }
     return new Promise((resolve, reject) => {
-      dbInstance.get(sql, params, (err, row) => {
+      sqliteInstance.get(sql, params, (err, row) => {
         if (err) reject(err);
         else resolve(row);
       });
@@ -106,12 +166,17 @@ const db = {
   },
 
   // Returns all matching rows
-  all(sql, params = []) {
+  async all(sql, params = []) {
+    if (DB_TYPE === 'mysql') {
+      // For JOIN query simulations in list endpoints, we can run raw execute
+      const [rows] = await mysqlPool.execute(sql, params);
+      return rows;
+    }
     if (useJsonFallback) {
       return allJson(sql, params);
     }
     return new Promise((resolve, reject) => {
-      dbInstance.all(sql, params, (err, rows) => {
+      sqliteInstance.all(sql, params, (err, rows) => {
         if (err) reject(err);
         else resolve(rows);
       });
@@ -120,7 +185,7 @@ const db = {
 };
 
 // ----------------------------------------------------
-// SQLite Migrations & Seeding
+// Table Schema Definitions
 // ----------------------------------------------------
 function createSqliteTables() {
   const tables = [
@@ -182,7 +247,7 @@ function createSqliteTables() {
 
   return Promise.all(tables.map(sql => {
     return new Promise((resolve, reject) => {
-      dbInstance.run(sql, (err) => {
+      sqliteInstance.run(sql, (err) => {
         if (err) reject(err);
         else resolve();
       });
@@ -190,14 +255,84 @@ function createSqliteTables() {
   }));
 }
 
-async function seedSqliteData() {
-  const userCount = await new Promise((resolve) => {
-    dbInstance.get("SELECT COUNT(*) as count FROM Users", (err, row) => resolve(row ? row.count : 0));
-  });
+async function createMysqlTables() {
+  const tables = [
+    `CREATE TABLE IF NOT EXISTS Users (
+      user_id INT PRIMARY KEY AUTO_INCREMENT,
+      name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      password VARCHAR(255) NOT NULL,
+      role VARCHAR(50) NOT NULL,
+      wallet_balance DOUBLE DEFAULT 0.0
+    )`,
+    `CREATE TABLE IF NOT EXISTS Colleges (
+      college_id INT PRIMARY KEY AUTO_INCREMENT,
+      college_name VARCHAR(255) NOT NULL,
+      location VARCHAR(255) NOT NULL,
+      contact VARCHAR(255) NOT NULL
+    )`,
+    `CREATE TABLE IF NOT EXISTS Courses (
+      course_id INT PRIMARY KEY AUTO_INCREMENT,
+      college_id INT,
+      course_name VARCHAR(255) NOT NULL,
+      commission DOUBLE DEFAULT 0.0,
+      FOREIGN KEY (college_id) REFERENCES Colleges(college_id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS Admissions (
+      admission_id INT PRIMARY KEY AUTO_INCREMENT,
+      student_name VARCHAR(255) NOT NULL,
+      course_id INT,
+      referrer_id INT,
+      status VARCHAR(50) DEFAULT 'Pending',
+      FOREIGN KEY (course_id) REFERENCES Courses(course_id) ON DELETE CASCADE,
+      FOREIGN KEY (referrer_id) REFERENCES Users(user_id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS TeachingCourses (
+      course_id INT PRIMARY KEY AUTO_INCREMENT,
+      teacher_id INT,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      price DOUBLE DEFAULT 0.0,
+      FOREIGN KEY (teacher_id) REFERENCES Users(user_id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS Enrollments (
+      enrollment_id INT PRIMARY KEY AUTO_INCREMENT,
+      student_id INT,
+      course_id INT,
+      payment_status VARCHAR(50) DEFAULT 'Pending',
+      FOREIGN KEY (student_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+      FOREIGN KEY (course_id) REFERENCES TeachingCourses(course_id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS Payments (
+      payment_id INT PRIMARY KEY AUTO_INCREMENT,
+      user_id INT,
+      amount DOUBLE NOT NULL,
+      type VARCHAR(255) NOT NULL,
+      date VARCHAR(50) NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
+    )`
+  ];
 
-  if (userCount > 0) return; // DB already seeded
+  for (const sql of tables) {
+    await mysqlPool.query(sql);
+  }
+}
 
-  console.log('Seeding SQLite database...');
+// ----------------------------------------------------
+// Data Seeding (Shared Logic)
+// ----------------------------------------------------
+async function seedData() {
+  if (useJsonFallback) {
+    if (jsonDb.data.users.length > 0) return;
+    console.log('Seeding JSON database...');
+    seedJsonData();
+    return;
+  }
+
+  const userCount = await db.get("SELECT COUNT(*) as count FROM Users");
+  if (userCount && userCount.count > 0) return; // DB already seeded
+
+  console.log(`Seeding database (Active DB: ${DB_TYPE})...`);
   const salt = bcrypt.genSaltSync(10);
   const adminPass = bcrypt.hashSync('admin123', salt);
   const teacherPass = bcrypt.hashSync('teacher123', salt);
@@ -205,7 +340,7 @@ async function seedSqliteData() {
   const referrerPass = bcrypt.hashSync('referrer123', salt);
 
   // Users
-  await db.run("INSERT INTO Users (name, email, password, role, wallet_balance) VALUES (?, ?, ?, ?, ?)", ['Platform Administrator', 'admin@educonnect.com', adminPass, 'admin', 0]);
+  await db.run("INSERT INTO Users (name, email, password, role, wallet_balance) VALUES (?, ?, ?, ?, ?)", ['Platform Administrator', 'admin@educonnect.com', adminPass, 'admin', 0.0]);
   await db.run("INSERT INTO Users (name, email, password, role, wallet_balance) VALUES (?, ?, ?, ?, ?)", ['Dr. Helen Carter', 'teacher1@educonnect.com', teacherPass, 'teacher', 1800.00]);
   await db.run("INSERT INTO Users (name, email, password, role, wallet_balance) VALUES (?, ?, ?, ?, ?)", ['Alex Green (Student)', 'student1@educonnect.com', studentPass, 'student', 8500.00]);
   await db.run("INSERT INTO Users (name, email, password, role, wallet_balance) VALUES (?, ?, ?, ?, ?)", ['Sarah Jenkins (Referrer)', 'referrer1@educonnect.com', referrerPass, 'student', 1500.00]);
@@ -242,9 +377,7 @@ async function seedSqliteData() {
 // ----------------------------------------------------
 // JSON Fallback Seeding
 // ----------------------------------------------------
-async function seedJsonData() {
-  if (jsonDb.data.users.length > 0) return;
-
+function seedJsonData() {
   const salt = bcrypt.genSaltSync(10);
   const adminPass = bcrypt.hashSync('admin123', salt);
   const teacherPass = bcrypt.hashSync('teacher123', salt);
@@ -296,13 +429,12 @@ async function seedJsonData() {
 }
 
 // ----------------------------------------------------
-// JSON Query Emulator (Simple implementation)
+// JSON Query Emulator (Shared Local state helper)
 // ----------------------------------------------------
 function runJson(sql, params) {
   jsonDb.load();
   const sqlLower = sql.toLowerCase().trim();
 
-  // Simple Router to parse SQL statements
   if (sqlLower.startsWith('insert into users')) {
     const user_id = jsonDb.data.users.length > 0 ? Math.max(...jsonDb.data.users.map(u => u.user_id)) + 1 : 1;
     jsonDb.data.users.push({
@@ -392,10 +524,7 @@ function runJson(sql, params) {
     return Promise.resolve({ lastID: course_id, changes: 1 });
   }
 
-  // Updates
   if (sqlLower.startsWith('update users set wallet_balance')) {
-    // pattern: UPDATE Users SET wallet_balance = wallet_balance + ? WHERE user_id = ?
-    // or: UPDATE Users SET wallet_balance = ? WHERE user_id = ?
     const isAdditive = sqlLower.includes('wallet_balance +') || sqlLower.includes('wallet_balance+');
     const userIdIndex = params.length - 1;
     const userId = params[userIdIndex];
@@ -415,7 +544,6 @@ function runJson(sql, params) {
   }
 
   if (sqlLower.startsWith('update admissions set status')) {
-    // UPDATE Admissions SET status = ? WHERE admission_id = ?
     const status = params[0];
     const admissionId = params[1];
     const admission = jsonDb.data.admissions.find(a => a.admission_id === admissionId);
@@ -427,7 +555,6 @@ function runJson(sql, params) {
     return Promise.resolve({ changes: 0 });
   }
 
-  console.warn(`Unmatched SQL write query in JSON mode: "${sql}"`);
   return Promise.resolve({ changes: 0 });
 }
 
@@ -463,7 +590,6 @@ function getJson(sql, params) {
     return Promise.resolve(course || null);
   }
 
-  console.warn(`Unmatched SQL single-row read query in JSON mode: "${sql}"`);
   return Promise.resolve(null);
 }
 
@@ -480,9 +606,7 @@ function allJson(sql, params) {
   }
 
   if (sqlLower.includes('select * from courses') || sqlLower.includes('from courses')) {
-    // Select with filter or all
     if (params.length > 0) {
-      // Typically SELECT * FROM Courses WHERE college_id = ?
       const college_id = params[0];
       return Promise.resolve(jsonDb.data.courses.filter(c => c.college_id === college_id));
     }
@@ -490,8 +614,6 @@ function allJson(sql, params) {
   }
 
   if (sqlLower.includes('select * from admissions') || sqlLower.includes('from admissions')) {
-    // JOIN simulations can be parsed or we can return custom mapped object
-    // For general listing, we want details of courses and colleges
     const joinedAdmissions = jsonDb.data.admissions.map(adm => {
       const course = jsonDb.data.courses.find(c => c.course_id === adm.course_id) || {};
       const college = jsonDb.data.colleges.find(c => c.college_id === course.college_id) || {};
@@ -528,7 +650,6 @@ function allJson(sql, params) {
   }
 
   if (sqlLower.includes('from enrollments')) {
-    // SELECT e.*, c.title, c.price, u.name as teacher_name FROM Enrollments e ...
     const joinedEnrollments = jsonDb.data.enrollments.map(enr => {
       const course = jsonDb.data.teaching_courses.find(c => c.course_id === enr.course_id) || {};
       const student = jsonDb.data.users.find(u => u.user_id === enr.student_id) || {};
@@ -565,7 +686,6 @@ function allJson(sql, params) {
     return Promise.resolve(joinedPayments);
   }
 
-  console.warn(`Unmatched SQL multi-row read query in JSON mode: "${sql}"`);
   return Promise.resolve([]);
 }
 
