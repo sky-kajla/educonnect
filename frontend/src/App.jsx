@@ -381,7 +381,7 @@ export default function App() {
       });
       const data = await res.json();
       if (res.ok) {
-        showToast("OTP generated! Check your terminal console logs.");
+        showToast(data.message || "OTP generated!");
         setAuthView('verify_otp');
       } else {
         showToast(data.error || 'Failed to send reset code', 'danger');

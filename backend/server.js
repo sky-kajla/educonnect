@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const nodemailer = require('nodemailer');
 const db = require('./db');
 
 const app = express();
@@ -10,6 +11,65 @@ const JWT_SECRET = 'educonnect_super_secret_key_12345';
 
 // Temporary store for password reset OTPs (email -> { otp, expires })
 const otpStore = new Map();
+
+// Configure nodemailer transporter using environment variables if provided
+const sendOtpEmail = async (toEmail, otp) => {
+  const emailUser = process.env.EMAIL_USER || '';
+  const emailPass = process.env.EMAIL_PASS || '';
+
+  if (!emailUser || !emailPass) {
+    console.log("\n=========================================================");
+    console.log("[MAIL FALLBACK - NO SMTP CREDENTIALS IN .env]");
+    console.log(`To: ${toEmail}`);
+    console.log("Subject: EduConnect Password Reset OTP Verification");
+    console.log(`Your 6-digit verification code is: ${otp}`);
+    console.log("(To receive real emails, set EMAIL_USER and EMAIL_PASS in your .env file)");
+    console.log("=========================================================\n");
+    return { sent: false, fallback: true };
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: emailUser,
+        pass: emailPass
+      }
+    });
+
+    const mailOptions = {
+      from: `"EduConnect" <${emailUser}>`,
+      to: toEmail,
+      subject: 'EduConnect Password Reset OTP Verification',
+      text: `Your 6-digit verification OTP code is: ${otp}\n\nThis code will expire in 10 minutes. If you did not request this, please ignore this email.`,
+      html: `
+        <div style="font-family: sans-serif; padding: 2rem; max-width: 500px; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <h2 style="color: #6366f1; margin-bottom: 1rem;">EduConnect Verification</h2>
+          <p>You requested a password reset. Use the following 6-digit verification code to complete the reset:</p>
+          <div style="background: #f1f5f9; padding: 1rem; text-align: center; font-size: 1.8rem; font-weight: bold; letter-spacing: 0.25em; border-radius: 6px; margin: 1.5rem 0; color: #0f172a;">
+            ${otp}
+          </div>
+          <p style="color: #64748b; font-size: 0.85rem;">This code will expire in 10 minutes.</p>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`[MAIL] Real email sent to ${toEmail}`);
+    return { sent: true, fallback: false };
+  } catch (error) {
+    console.error(`[MAIL ERROR] Failed to send email via SMTP: ${error.message}`);
+    // fallback to logging
+    console.log("\n=========================================================");
+    console.log("[MAIL FALLBACK - SMTP SEND FAILURE]");
+    console.log(`To: ${toEmail}`);
+    console.log("Subject: EduConnect Password Reset OTP Verification");
+    console.log(`Your 6-digit verification code is: ${otp}`);
+    console.log("=========================================================\n");
+    return { sent: false, fallback: true, error: error.message };
+  }
+};
+
 
 app.use(cors());
 app.use(express.json());
@@ -125,14 +185,12 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const expires = Date.now() + 10 * 60 * 1000;
     otpStore.set(email.toLowerCase(), { otp, expires });
 
-    console.log("\n=========================================================");
-    console.log(`[MAIL SIMULATOR] To: ${email}`);
-    console.log("Subject: EduConnect Password Reset OTP Verification");
-    console.log(`Your 6-digit verification code is: ${otp}`);
-    console.log("(This code will expire in 10 minutes)");
-    console.log("=========================================================\n");
-
-    res.json({ message: 'Verification OTP sent to your email (simulated in backend console logs).' });
+    const mailResult = await sendOtpEmail(email, otp);
+    if (mailResult.sent) {
+      res.json({ message: 'Verification OTP has been sent to your Gmail address!' });
+    } else {
+      res.json({ message: 'Verification OTP generated! Check your terminal console logs (fallback).' });
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
