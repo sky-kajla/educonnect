@@ -655,17 +655,55 @@ export default function App() {
       </p>
 
       <div className="stats-grid" style={{ width: '100%' }}>
-        <div className="card">
+        <div className="card" style={{ cursor: 'pointer' }} onClick={() => {
+          if (!user) {
+            showToast("Please sign in to access referrals.", "warning");
+            setCurrentTab("auth");
+            setAuthView("login");
+          } else if (user.role === 'student') {
+            setCurrentTab("colleges");
+          } else if (user.role === 'teacher') {
+            showToast("Teachers manage classes. Redirecting to Teacher Dashboard.", "warning");
+            setCurrentTab("teacher");
+          } else if (user.role === 'admin') {
+            setCurrentTab("admin");
+            setAdminSubTab("admissions");
+          }
+        }}>
           <div style={{ color: 'var(--primary)', fontWeight: '600', textTransform: 'uppercase', fontSize: '0.8rem' }}>Admissions Referral</div>
           <h3 style={{ fontSize: '1.5rem', margin: '0.5rem 0' }}>Earn Commission</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Refer students to fully accredited partner colleges. Get rewarded with high referral payouts credited instantly.</p>
         </div>
-        <div className="card">
+        <div className="card" style={{ cursor: 'pointer' }} onClick={() => {
+          if (!user) {
+            showToast("Please sign in to access the course marketplace.", "warning");
+            setCurrentTab("auth");
+            setAuthView("login");
+          } else if (user.role === 'student') {
+            setCurrentTab("marketplace");
+          } else {
+            showToast("Marketplace is for students. Accessing console panels.", "warning");
+            setCurrentTab(user.role === 'teacher' ? "teacher" : "admin");
+          }
+        }}>
           <div style={{ color: 'var(--accent)', fontWeight: '600', textTransform: 'uppercase', fontSize: '0.8rem' }}>Course Marketplace</div>
           <h3 style={{ fontSize: '1.5rem', margin: '0.5rem 0' }}>Learn Software Skills</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Enroll in premium, developer-focused coding courses. Pay or earn using our sandbox account wallets.</p>
         </div>
-        <div className="card">
+        <div className="card" style={{ cursor: 'pointer' }} onClick={() => {
+          if (!user) {
+            showToast("Please sign in to attend online classes.", "warning");
+            setCurrentTab("auth");
+            setAuthView("login");
+          } else if (user.role === 'student') {
+            setCurrentTab("classes");
+          } else if (user.role === 'teacher') {
+            setCurrentTab("teacher");
+          } else {
+            showToast("Admins manage database explorer. Redirecting to Admin Panel.", "warning");
+            setCurrentTab("admin");
+          }
+        }}>
           <div style={{ color: 'var(--secondary)', fontWeight: '600', textTransform: 'uppercase', fontSize: '0.8rem' }}>Online Classes</div>
           <h3 style={{ fontSize: '1.5rem', margin: '0.5rem 0' }}>Virtual Classroom</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Join live video streams, browse interactive slides, chat in real-time, and draft notes in your study desk.</p>
