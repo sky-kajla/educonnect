@@ -650,6 +650,93 @@ app.post('/api/admin/db/query', authenticateToken, requireAdmin, async (req, res
 });
 
 // ----------------------------------------------------
+// Admin Email Settings APIs
+// ----------------------------------------------------
+app.get('/api/admin/email-settings', authenticateToken, requireAdmin, async (req, res) => {
+  res.json({
+    emailUser: process.env.EMAIL_USER || '',
+    emailPassConfigured: !!process.env.EMAIL_PASS
+  });
+});
+
+app.post('/api/admin/email-settings', authenticateToken, requireAdmin, async (req, res) => {
+  const { emailUser, emailPass } = req.body;
+  if (emailUser === undefined || emailPass === undefined) {
+    return res.status(400).json({ error: 'emailUser and emailPass are required' });
+  }
+
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const ENV_PATH = path.join(__dirname, '..', '.env');
+    
+    let envContent = '';
+    if (fs.existsSync(ENV_PATH)) {
+      envContent = fs.readFileSync(ENV_PATH, 'utf8');
+    }
+
+    const lines = envContent.split('\n');
+    let hasEmailUser = false;
+    let hasEmailPass = false;
+
+    const newLines = lines.map(line => {
+      if (line.trim().startsWith('EMAIL_USER=')) {
+        hasEmailUser = true;
+        return `EMAIL_USER=${emailUser}`;
+      }
+      if (line.trim().startsWith('EMAIL_PASS=')) {
+        hasEmailPass = true;
+        return `EMAIL_PASS=${emailPass}`;
+      }
+      return line;
+    });
+
+    if (!hasEmailUser) newLines.push(`EMAIL_USER=${emailUser}`);
+    if (!hasEmailPass) newLines.push(`EMAIL_PASS=${emailPass}`);
+
+    fs.writeFileSync(ENV_PATH, newLines.join('\n').trim() + '\n', 'utf8');
+
+    process.env.EMAIL_USER = emailUser;
+    process.env.EMAIL_PASS = emailPass;
+
+    res.json({ message: 'Email settings saved and activated successfully!' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/email-settings/test', authenticateToken, requireAdmin, async (req, res) => {
+  const emailUser = process.env.EMAIL_USER || '';
+  const emailPass = process.env.EMAIL_PASS || '';
+
+  if (!emailUser || !emailPass) {
+    return res.status(400).json({ error: 'Please configure SMTP settings first.' });
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: emailUser,
+        pass: emailPass
+      }
+    });
+
+    const mailOptions = {
+      from: `"EduConnect" <${emailUser}>`,
+      to: req.user.email,
+      subject: 'EduConnect SMTP Test Connection',
+      text: 'Congratulations! Your SMTP configuration is correct and EduConnect can now send real email notifications and OTP codes.'
+    };
+
+    await transporter.sendMail(mailOptions);
+    res.json({ message: `Test email sent successfully to ${req.user.email}!` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ----------------------------------------------------
 // Payments & Wallet Routes
 // ----------------------------------------------------
 app.get('/api/payments', authenticateToken, async (req, res) => {

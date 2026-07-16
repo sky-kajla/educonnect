@@ -71,7 +71,13 @@ export default function App() {
   const [resetNewPassword, setResetNewPassword] = useState('');
 
   // Admin current view mode
-  const [adminSubTab, setAdminSubTab] = useState('overview'); // 'overview', 'admissions', 'colleges', 'db_explorer'
+  const [adminSubTab, setAdminSubTab] = useState('overview'); // 'overview', 'admissions', 'colleges', 'db_explorer', 'email_settings'
+
+  // Admin Email config state
+  const [adminEmailUser, setAdminEmailUser] = useState('');
+  const [adminEmailPass, setAdminEmailPass] = useState('');
+  const [adminEmailPassConfigured, setAdminEmailPassConfigured] = useState(false);
+  const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
 
   // Notification state
   const [toast, setToast] = useState(null);
@@ -131,6 +137,7 @@ export default function App() {
       if (user.role === 'admin') {
         fetchAdminStats();
         fetchDbTablesList();
+        fetchEmailSettings();
       }
       if (user.role === 'teacher') {
         fetchTeacherData();
@@ -339,6 +346,67 @@ export default function App() {
       }
     } catch (e) {
       showToast('Connection error', 'danger');
+    }
+  };
+
+  const fetchEmailSettings = async () => {
+    try {
+      const res = await fetch('/api/admin/email-settings', { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setAdminEmailUser(data.emailUser);
+        setAdminEmailPassConfigured(data.emailPassConfigured);
+        if (data.emailPassConfigured) {
+          setAdminEmailPass('••••••••••••••••');
+        } else {
+          setAdminEmailPass('');
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSaveEmailSettings = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/admin/email-settings', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ 
+          emailUser: adminEmailUser, 
+          emailPass: adminEmailPass === '••••••••••••••••' ? '' : adminEmailPass 
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message || "Email settings saved!");
+        fetchEmailSettings();
+      } else {
+        showToast(data.error || 'Failed to save email settings', 'danger');
+      }
+    } catch (err) {
+      showToast('Connection error', 'danger');
+    }
+  };
+
+  const handleTestEmailSettings = async () => {
+    setIsSendingTestEmail(true);
+    try {
+      const res = await fetch('/api/admin/email-settings/test', {
+        method: 'POST',
+        headers: getAuthHeaders()
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message || "Test email sent!");
+      } else {
+        showToast(data.error || 'Failed to send test email', 'danger');
+      }
+    } catch (err) {
+      showToast('Connection error', 'danger');
+    } finally {
+      setIsSendingTestEmail(false);
     }
   };
 
@@ -1358,6 +1426,7 @@ export default function App() {
           <button className={`btn ${adminSubTab === 'admissions' ? 'btn-primary' : 'btn-secondary'}`} style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }} onClick={() => setAdminSubTab('admissions')}>Referral Queue</button>
           <button className={`btn ${adminSubTab === 'colleges' ? 'btn-primary' : 'btn-secondary'}`} style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }} onClick={() => setAdminSubTab('colleges')}>Manage Colleges</button>
           <button className={`btn ${adminSubTab === 'db_explorer' ? 'btn-primary' : 'btn-secondary'}`} style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', borderColor: 'var(--accent)', color: adminSubTab === 'db_explorer' ? '#fff' : 'var(--accent)' }} onClick={() => setAdminSubTab('db_explorer')}>Database Explorer 🗄️</button>
+          <button className={`btn ${adminSubTab === 'email_settings' ? 'btn-primary' : 'btn-secondary'}`} style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', borderColor: 'var(--secondary)', color: adminSubTab === 'email_settings' ? '#fff' : 'var(--secondary)' }} onClick={() => setAdminSubTab('email_settings')}>Email Settings ✉️</button>
         </div>
 
         {/* Admin overview sub-view */}
@@ -1584,6 +1653,60 @@ export default function App() {
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {adminSubTab === 'email_settings' && (
+          <div className="card" style={{ maxWidth: '600px', margin: '0 auto' }}>
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>SMTP Mail Server Settings ✉️</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '2rem' }}>
+              Configure your Gmail SMTP settings here so that EduConnect can send password recovery OTP codes directly to user emails.
+            </p>
+
+            <form onSubmit={handleSaveEmailSettings}>
+              <div className="form-group">
+                <label>Gmail Address</label>
+                <input 
+                  type="email" 
+                  className="form-control" 
+                  value={adminEmailUser} 
+                  onChange={(e) => setAdminEmailUser(e.target.value)} 
+                  required 
+                  placeholder="e.g. your-account@gmail.com" 
+                />
+              </div>
+              <div className="form-group">
+                <label>Gmail App Password</label>
+                <input 
+                  type="password" 
+                  className="form-control" 
+                  value={adminEmailPass} 
+                  onChange={(e) => setAdminEmailPass(e.target.value)} 
+                  required 
+                  placeholder="e.g. abcd efgh ijkl mnop" 
+                />
+                <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: '0.4rem', fontSize: '0.75rem' }}>
+                  Google requires a 16-character **App Password** created in Google Account Security settings. Do not use your primary password.
+                </small>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+                  Save SMTP Settings
+                </button>
+                {adminEmailPassConfigured && (
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    style={{ borderColor: 'var(--success)', color: 'var(--success)' }}
+                    onClick={handleTestEmailSettings}
+                    disabled={isSendingTestEmail}
+                  >
+                    {isSendingTestEmail ? 'Sending Test...' : 'Test Connection ⚡'}
+                  </button>
+                )}
+              </div>
+            </form>
           </div>
         )}
       </div>
