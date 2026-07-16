@@ -71,6 +71,15 @@ export default function App() {
   // Notification state
   const [toast, setToast] = useState(null);
 
+  // Theme state
+  const [activeTheme, setActiveTheme] = useState(localStorage.getItem('theme') || 'midnight');
+
+  useEffect(() => {
+    document.body.classList.remove('theme-midnight', 'theme-cyberpunk', 'theme-emerald', 'theme-light');
+    document.body.classList.add(`theme-${activeTheme}`);
+    localStorage.setItem('theme', activeTheme);
+  }, [activeTheme]);
+
   // Classroom Presentation Slides
   const CLASSROOM_SLIDES = [
     { title: "Slide 1: Course Fundamentals", bullets: ["Welcome to the learning workspace", "Understanding core concepts", "Prerequisites and tools setup"] },
@@ -1606,7 +1615,21 @@ export default function App() {
       {/* Main Workspace Frame */}
       <div className="main-workspace">
         {/* Workspace Top Header */}
-        <header className="workspace-header">
+        <header className="workspace-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Workspace Theme:</span>
+            <select 
+              className="form-control" 
+              style={{ width: '140px', padding: '0.3rem 0.5rem', fontSize: '0.8rem', height: 'auto', background: 'rgba(255,255,255,0.03)', color: 'var(--text-main)', border: '1px solid var(--border-glass)', cursor: 'pointer' }}
+              value={activeTheme}
+              onChange={(e) => setActiveTheme(e.target.value)}
+            >
+              <option value="midnight" style={{ background: '#0b0f19', color: '#fff' }}>Midnight Slate</option>
+              <option value="cyberpunk" style={{ background: '#120029', color: '#fff' }}>Cyberpunk Neon</option>
+              <option value="emerald" style={{ background: '#04140d', color: '#fff' }}>Emerald Forest</option>
+              <option value="light" style={{ background: '#ffffff', color: '#000' }}>Light Glass</option>
+            </select>
+          </div>
           {user && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-glass)', padding: '0.4rem 1rem', borderRadius: '8px' }}>
