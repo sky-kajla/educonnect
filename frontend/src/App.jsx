@@ -80,6 +80,35 @@ export default function App() {
   const [adminEmailPassConfigured, setAdminEmailPassConfigured] = useState(false);
   const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
 
+  // Profile form state
+  const [profileName, setProfileName] = useState('');
+  const [profileEmail, setProfileEmail] = useState('');
+  const [profileMobile, setProfileMobile] = useState('');
+  const [profileAddress, setProfileAddress] = useState('');
+  const [profileAge, setProfileAge] = useState('');
+  const [profileGender, setProfileGender] = useState('');
+  const [profileUsername, setProfileUsername] = useState('');
+  const [profilePic, setProfilePic] = useState('');
+  const [avatarShape, setAvatarShape] = useState('circle'); // 'circle', 'rounded', 'square'
+  const [avatarCompression, setAvatarCompression] = useState('medium'); // 'small', 'medium', 'original'
+  const [showAvatarLightbox, setShowAvatarLightbox] = useState(false);
+  const [profileCurrentPassword, setProfileCurrentPassword] = useState('');
+  const [profileNewPassword, setProfileNewPassword] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      setProfileName(user.name || '');
+      setProfileEmail(user.email || '');
+      setProfileMobile(user.mobile || '');
+      setProfileAddress(user.address || '');
+      setProfileAge(user.age || '');
+      setProfileGender(user.gender || '');
+      setProfileUsername(user.username || '');
+      setProfilePic(user.profile_pic || '');
+      setAvatarShape(user.avatar_shape || 'circle');
+    }
+  }, [user]);
+
   // Notification state
   const [toast, setToast] = useState(null);
 
@@ -104,6 +133,12 @@ export default function App() {
   // ----------------------------------------------------
   // Helpers
   // ----------------------------------------------------
+  const getAvatarBorderRadius = (shape) => {
+    if (shape === 'square') return '0px';
+    if (shape === 'rounded') return '12px';
+    return '50%';
+  };
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
@@ -436,6 +471,114 @@ export default function App() {
   // ----------------------------------------------------
   // Actions
   // ----------------------------------------------------
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ 
+          name: profileName, 
+          email: profileEmail,
+          mobile: profileMobile,
+          address: profileAddress,
+          age: profileAge,
+          gender: profileGender,
+          username: profileUsername,
+          profile_pic: profilePic,
+          avatar_shape: avatarShape
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message || "Profile updated successfully!");
+        setUser(data.user);
+      } else {
+        showToast(data.error || 'Failed to update profile', 'danger');
+      }
+    } catch (err) {
+      showToast('Connection error', 'danger');
+    }
+  };
+
+  const resizeImageToBase64 = (file, sizeType, callback) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (sizeType === 'original') {
+        callback(e.target.result);
+        return;
+      }
+      
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        let targetDimension = sizeType === 'small' ? 150 : 400;
+        
+        if (width > height) {
+          if (width > targetDimension) {
+            height = Math.round((height * targetDimension) / width);
+            width = targetDimension;
+          }
+        } else {
+          if (height > targetDimension) {
+            width = Math.round((width * targetDimension) / height);
+            height = targetDimension;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        callback(dataUrl);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) { // Up to 10MB since we compress client-side
+        showToast("Image size should be less than 10MB", "warning");
+        return;
+      }
+      resizeImageToBase64(file, avatarCompression, (resizedBase64) => {
+        setProfilePic(resizedBase64);
+      });
+    }
+  };
+
+  const handleChangePasswordSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ 
+          currentPassword: profileCurrentPassword, 
+          newPassword: profileNewPassword 
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message || "Password changed successfully!");
+        setProfileCurrentPassword('');
+        setProfileNewPassword('');
+      } else {
+        showToast(data.error || 'Failed to change password', 'danger');
+      }
+    } catch (err) {
+      showToast('Connection error', 'danger');
+    }
+  };
+
   const handleForgotPasswordSubmit = async (e) => {
     if (e) e.preventDefault();
     if (!resetEmail) {
@@ -776,6 +919,7 @@ export default function App() {
   const IconMarket = () => <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>;
   const IconClass = () => <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>;
   const IconLedger = () => <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>;
+  const IconProfile = () => <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>;
 
   // ----------------------------------------------------
   // Views
@@ -1764,6 +1908,197 @@ export default function App() {
     </div>
   );
 
+  const renderProfile = () => {
+    if (!user) return null;
+    return (
+      <div>
+        <div className="section-header">
+          <div className="section-title-wrap">
+            <h2>My User Profile</h2>
+            <p>Manage your account settings, credentials, and check your role statistics.</p>
+          </div>
+        </div>
+
+        <div className="grid-container" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', alignItems: 'start', gap: '1.75rem', marginTop: '1.5rem' }}>
+          {/* Profile Update Panel */}
+          <div className="card">
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>Account Details</h3>
+            <form onSubmit={handleUpdateProfile}>
+              {/* Profile Picture Upload Circle with Shape and Size Configs */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                <div className="avatar-upload-container" style={{ position: 'relative', width: '110px', height: '110px', borderRadius: getAvatarBorderRadius(avatarShape), overflow: 'hidden', border: '2px solid var(--primary)', background: 'rgba(255,255,255,0.03)' }}>
+                  {profilePic ? (
+                    <img src={profilePic} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', color: '#fff', fontSize: '2.25rem', fontWeight: 'bold' }}>
+                      {profileName ? profileName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() : 'U'}
+                    </div>
+                  )}
+                  <label htmlFor="profile-upload" style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.7rem', opacity: 0, transition: 'opacity 0.2s', cursor: 'pointer' }} className="avatar-hover-label">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span style={{ marginTop: '2px' }}>Upload</span>
+                  </label>
+                  <input id="profile-upload" type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageChange} />
+                </div>
+                
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '0.25rem' }}>
+                  {profilePic && (
+                    <>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--primary)', cursor: 'pointer', fontWeight: '600' }} onClick={() => setShowAvatarLightbox(true)}>View Full Size 🔍</span>
+                      <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--danger)', cursor: 'pointer' }} onClick={() => setProfilePic('')}>Remove image</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Resolution / Size selection option */}
+              <div style={{ width: '100%', marginBottom: '1rem' }}>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Image Upload Quality / Size</label>
+                <select className="form-control" value={avatarCompression} onChange={(e) => setAvatarCompression(e.target.value)} style={{ padding: '0.35rem 0.5rem', fontSize: '0.8rem', height: 'auto', background: 'rgba(255,255,255,0.03)' }}>
+                  <option value="small">Small / Compressed (150x150 Thumbnail)</option>
+                  <option value="medium">Medium / Balanced (400x400 Standard)</option>
+                  <option value="original">Original / Max Quality (Full Resolution)</option>
+                </select>
+              </div>
+
+              {/* Display shape selection option */}
+              <div style={{ width: '100%', marginBottom: '1.5rem' }}>
+                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Avatar Shape</label>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                  {['circle', 'rounded', 'square'].map(shape => (
+                    <button type="button" key={shape} className={`btn ${avatarShape === shape ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, padding: '0.35rem', fontSize: '0.75rem', textTransform: 'capitalize' }} onClick={() => setAvatarShape(shape)}>
+                      {shape}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Full Name</label>
+                <input type="text" className="form-control" value={profileName} onChange={(e) => setProfileName(e.target.value)} required />
+              </div>
+              <div className="form-group">
+                <label>Username</label>
+                <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-glass)', borderRadius: '8px', paddingLeft: '0.75rem' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginRight: '0.25rem', userSelect: 'none' }}>@</span>
+                  <input type="text" className="form-control" value={profileUsername} onChange={(e) => setProfileUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} placeholder="username" style={{ border: 'none', background: 'transparent', paddingLeft: 0 }} />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Email Address</label>
+                <input type="email" className="form-control" value={profileEmail} onChange={(e) => setProfileEmail(e.target.value)} required />
+              </div>
+              
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label>Mobile Number</label>
+                  <input type="tel" className="form-control" value={profileMobile} onChange={(e) => setProfileMobile(e.target.value)} placeholder="+1 (555) 123-4567" />
+                </div>
+                <div className="form-group" style={{ width: '100px' }}>
+                  <label>Age</label>
+                  <input type="number" className="form-control" value={profileAge} onChange={(e) => setProfileAge(e.target.value)} placeholder="20" min="0" max="150" />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Gender / Sex</label>
+                <select className="form-control" value={profileGender} onChange={(e) => setProfileGender(e.target.value)}>
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                  <option value="Prefer not to say">Prefer not to say</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Billing & Contact Address</label>
+                <textarea className="form-control" value={profileAddress} onChange={(e) => setProfileAddress(e.target.value)} placeholder="123 Academic Way, Suite 101, Stanford, CA" rows="2" style={{ resize: 'vertical' }} />
+              </div>
+
+              <div className="form-group">
+                <label>User Role</label>
+                <input type="text" className="form-control" value={user.role.toUpperCase()} disabled style={{ opacity: 0.6, cursor: 'not-allowed' }} />
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>Update Profile</button>
+            </form>
+          </div>
+
+          {/* Change Password Panel */}
+          <div className="card">
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>Update Security</h3>
+            <form onSubmit={handleChangePasswordSubmit}>
+              <div className="form-group">
+                <label>Current Password</label>
+                <input type="password" className="form-control" value={profileCurrentPassword} onChange={(e) => setProfileCurrentPassword(e.target.value)} required placeholder="••••••••" />
+              </div>
+              <div className="form-group">
+                <label>New Password</label>
+                <input type="password" className="form-control" value={profileNewPassword} onChange={(e) => setProfileNewPassword(e.target.value)} required placeholder="••••••••" />
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1.5rem', background: 'var(--accent)', borderColor: 'var(--accent)', color: '#000' }}>Change Password</button>
+            </form>
+          </div>
+        </div>
+
+        {/* Account stats cards */}
+        <div className="stats-grid" style={{ marginTop: '2rem' }}>
+          <div className="card">
+            <div style={{ color: 'var(--primary)', fontWeight: '600', fontSize: '0.75rem', textTransform: 'uppercase' }}>Wallet Cash Balance</div>
+            <h3 style={{ fontSize: '2rem', margin: '0.5rem 0', color: 'var(--success)' }}>${user.wallet_balance.toFixed(2)}</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Mock currency for course sales, purchases, and admissions referrals.</p>
+          </div>
+          
+          {user.role === 'student' && (
+            <>
+              <div className="card">
+                <div style={{ color: 'var(--accent)', fontWeight: '600', fontSize: '0.75rem', textTransform: 'uppercase' }}>Enrolled Courses</div>
+                <h3 style={{ fontSize: '2rem', margin: '0.5rem 0' }}>{myEnrollments.length}</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Total active course enrollments purchased from the developer marketplace.</p>
+              </div>
+              <div className="card">
+                <div style={{ color: 'var(--secondary)', fontWeight: '600', fontSize: '0.75rem', textTransform: 'uppercase' }}>Admissions Referrals</div>
+                <h3 style={{ fontSize: '2rem', margin: '0.5rem 0' }}>{admissions.filter(a => a.referrer_id === user.user_id).length}</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Submitted college admissions referrals under verification queue.</p>
+              </div>
+            </>
+          )}
+
+          {user.role === 'teacher' && (
+            <>
+              <div className="card">
+                <div style={{ color: 'var(--accent)', fontWeight: '600', fontSize: '0.75rem', textTransform: 'uppercase' }}>Published Courses</div>
+                <h3 style={{ fontSize: '2rem', margin: '0.5rem 0' }}>{myTeachingCourses.length}</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Active premium classes listed on the public student marketplace.</p>
+              </div>
+              <div className="card">
+                <div style={{ color: 'var(--secondary)', fontWeight: '600', fontSize: '0.75rem', textTransform: 'uppercase' }}>Registered Students</div>
+                <h3 style={{ fontSize: '2rem', margin: '0.5rem 0' }}>{teacherEnrollments.length}</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Total student enrollments across all your hosted courses.</p>
+              </div>
+            </>
+          )}
+
+          {user.role === 'admin' && adminStats && (
+            <>
+              <div className="card">
+                <div style={{ color: 'var(--accent)', fontWeight: '600', fontSize: '0.75rem', textTransform: 'uppercase' }}>Platform Users</div>
+                <h3 style={{ fontSize: '2rem', margin: '0.5rem 0' }}>{adminStats.totalUsers}</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Total user accounts registered database-wide.</p>
+              </div>
+              <div className="card">
+                <div style={{ color: 'var(--secondary)', fontWeight: '600', fontSize: '0.75rem', textTransform: 'uppercase' }}>Colleges Monitored</div>
+                <h3 style={{ fontSize: '2rem', margin: '0.5rem 0' }}>{adminStats.totalColleges}</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Affiliated university partner configurations.</p>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // ----------------------------------------------------
   // Main SaaS layout
   // ----------------------------------------------------
@@ -1867,19 +2202,46 @@ export default function App() {
           }}>
             <IconLedger /> Wallet Ledger
           </div>
+
+          <div className={`sidebar-item ${currentTab === 'profile' ? 'active' : ''}`} onClick={() => {
+            if (!user) {
+              showToast("Please sign in to view your profile.", "warning");
+              setCurrentTab("auth");
+              setAuthView("login");
+            } else {
+              setCurrentTab('profile');
+            }
+          }}>
+            <IconProfile /> My Profile
+          </div>
         </nav>
 
         <div className="sidebar-footer">
           {user ? (
-            <div className="user-profile-card">
-              <div className="user-profile-details">
-                <span className="user-profile-name">{user.name}</span>
-                <span className="user-profile-email">{user.email}</span>
-                <span className={`user-role-tag ${user.role}`} style={{ alignSelf: 'flex-start', marginTop: '0.35rem' }}>{user.role}</span>
+            <div className="user-profile-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                {user.profile_pic ? (
+                  <img src={user.profile_pic} alt="Avatar" style={{ width: '40px', height: '40px', borderRadius: getAvatarBorderRadius(user.avatar_shape), objectFit: 'cover', border: '1px solid var(--border-glass)' }} />
+                ) : (
+                  <div style={{ display: 'flex', width: '40px', height: '40px', borderRadius: getAvatarBorderRadius(user.avatar_shape), alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', color: '#fff', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                    {user.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+                  </div>
+                )}
+                <div className="user-profile-details" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                  <span className="user-profile-name" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.name}</span>
+                  <span className="user-profile-email" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.75rem' }}>
+                    {user.username ? `@${user.username}` : user.email}
+                  </span>
+                </div>
               </div>
-              <button className="btn btn-secondary" style={{ padding: '0.35rem 0.5rem', width: '100%', fontSize: '0.8rem', border: '1px solid var(--danger)', color: 'var(--danger)', background: 'none' }} onClick={handleLogout}>
-                Logout
-              </button>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button className="btn btn-secondary" style={{ padding: '0.25rem 0.5rem', flex: 1, fontSize: '0.75rem', borderColor: 'var(--border-glass)' }} onClick={() => setCurrentTab('profile')}>
+                  Edit Profile
+                </button>
+                <button className="btn" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', border: '1px solid var(--danger)', color: 'var(--danger)', background: 'none' }} onClick={handleLogout}>
+                  Logout
+                </button>
+              </div>
             </div>
           ) : (
             <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => { setCurrentTab('auth'); setAuthView('login'); }}>
@@ -1926,6 +2288,19 @@ export default function App() {
               }}>
                 + Mock Cash
               </button>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }} onClick={() => setCurrentTab('profile')}>
+                {user.profile_pic ? (
+                  <img src={user.profile_pic} alt="Avatar" style={{ width: '32px', height: '32px', borderRadius: getAvatarBorderRadius(user.avatar_shape), objectFit: 'cover', border: '2px solid var(--primary)' }} />
+                ) : (
+                  <div style={{ display: 'flex', width: '32px', height: '32px', borderRadius: getAvatarBorderRadius(user.avatar_shape), alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                    {user.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+                  </div>
+                )}
+                <span style={{ fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-main)' }}>
+                  {user.username ? `@${user.username}` : user.name.split(' ')[0]}
+                </span>
+              </div>
             </div>
           )}
         </header>
@@ -1942,6 +2317,7 @@ export default function App() {
           {currentTab === 'teacher' && renderTeacherDashboard()}
           {currentTab === 'admin' && renderAdminPanel()}
           {currentTab === 'payments' && renderPayments()}
+          {currentTab === 'profile' && renderProfile()}
         </div>
       </div>
 
@@ -1971,6 +2347,20 @@ export default function App() {
               </div>
               <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>Submit Referral</button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Modal for Avatar Picture */}
+      {showAvatarLightbox && profilePic && (
+        <div className="modal-overlay" onClick={() => setShowAvatarLightbox(false)}>
+          <div className="modal-content" style={{ maxWidth: '500px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#111827', border: '1px solid var(--border-glass-hover)' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-close" onClick={() => setShowAvatarLightbox(false)}>×</div>
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem', width: '100%' }}>Profile Picture Preview</h3>
+            <img src={profilePic} alt="Avatar Full Size" style={{ maxWidth: '100%', maxHeight: '60vh', borderRadius: getAvatarBorderRadius(avatarShape), objectFit: 'contain', border: '2px solid var(--primary)', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }} />
+            <div style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Render shape: {avatarShape.toUpperCase()}
+            </div>
           </div>
         </div>
       )}

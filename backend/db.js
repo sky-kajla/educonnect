@@ -104,6 +104,7 @@ const db = {
           
           await createMysqlTables();
           await seedData();
+          await migrateColumns();
           resolve();
         } catch (err) {
           console.error('MySQL connection failed. Check your credentials in .env.', err);
@@ -127,6 +128,7 @@ const db = {
               console.log('Connected to SQLite database.');
               createSqliteTables()
                 .then(() => seedData())
+                .then(() => migrateColumns())
                 .then(resolve)
                 .catch(reject);
             }
@@ -246,7 +248,14 @@ function createSqliteTables() {
       email TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
       role TEXT NOT NULL,
-      wallet_balance REAL DEFAULT 0.0
+      wallet_balance REAL DEFAULT 0.0,
+      mobile TEXT NULL,
+      address TEXT NULL,
+      age INTEGER NULL,
+      gender TEXT NULL,
+      username TEXT UNIQUE NULL,
+      profile_pic TEXT NULL,
+      avatar_shape TEXT NULL DEFAULT 'circle'
     )`,
     `CREATE TABLE IF NOT EXISTS Colleges (
       college_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -324,7 +333,14 @@ async function createMysqlTables() {
       email VARCHAR(255) UNIQUE NOT NULL,
       password VARCHAR(255) NOT NULL,
       role VARCHAR(50) NOT NULL,
-      wallet_balance DOUBLE DEFAULT 0.0
+      wallet_balance DOUBLE DEFAULT 0.0,
+      mobile VARCHAR(255) NULL,
+      address TEXT NULL,
+      age INT NULL,
+      gender VARCHAR(255) NULL,
+      username VARCHAR(255) UNIQUE NULL,
+      profile_pic LONGTEXT NULL,
+      avatar_shape VARCHAR(50) NULL DEFAULT 'circle'
     )`,
     `CREATE TABLE IF NOT EXISTS Colleges (
       college_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -843,6 +859,32 @@ function allJson(sql, params) {
   }
 
   return Promise.resolve([]);
+}
+
+async function migrateColumns() {
+  if (useJsonFallback) return;
+  try {
+    if (DB_TYPE === 'mysql') {
+      try { await mysqlPool.query("ALTER TABLE Users ADD COLUMN mobile VARCHAR(255) NULL"); } catch (e) {}
+      try { await mysqlPool.query("ALTER TABLE Users ADD COLUMN address TEXT NULL"); } catch (e) {}
+      try { await mysqlPool.query("ALTER TABLE Users ADD COLUMN age INT NULL"); } catch (e) {}
+      try { await mysqlPool.query("ALTER TABLE Users ADD COLUMN gender VARCHAR(255) NULL"); } catch (e) {}
+      try { await mysqlPool.query("ALTER TABLE Users ADD COLUMN username VARCHAR(255) NULL"); } catch (e) {}
+      try { await mysqlPool.query("ALTER TABLE Users ADD COLUMN profile_pic LONGTEXT NULL"); } catch (e) {}
+      try { await mysqlPool.query("ALTER TABLE Users ADD COLUMN avatar_shape VARCHAR(50) NULL"); } catch (e) {}
+    } else {
+      // SQLite
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN mobile TEXT NULL", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN address TEXT NULL", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN age INTEGER NULL", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN gender TEXT NULL", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN username TEXT NULL", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN profile_pic TEXT NULL", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN avatar_shape TEXT NULL", () => resolve())); } catch (e) {}
+    }
+  } catch (err) {
+    console.error("Migration failed:", err);
+  }
 }
 
 module.exports = db;

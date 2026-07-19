@@ -888,3 +888,7 @@ tr:hover td {
 .modal-close:hover {
   color: var(--text-main);
 }
+
+.avatar-upload-container:hover .avatar-hover-label {
+  opacity: 1 !important;
+}

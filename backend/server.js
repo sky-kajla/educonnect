@@ -72,7 +72,8 @@ const sendOtpEmail = async (toEmail, otp) => {
 
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // ----------------------------------------------------
 // Authentication Middleware
@@ -131,7 +132,20 @@ app.post('/api/auth/register', async (req, res) => {
     const token = jwt.sign({ user_id: result.lastID, email, role }, JWT_SECRET, { expiresIn: '24h' });
     res.status(201).json({
       token,
-      user: { user_id: result.lastID, name, email, role, wallet_balance: startingBalance }
+      user: { 
+        user_id: result.lastID, 
+        name, 
+        email, 
+        role, 
+        wallet_balance: startingBalance,
+        mobile: null,
+        address: null,
+        age: null,
+        gender: null,
+        username: null,
+        profile_pic: null,
+        avatar_shape: 'circle'
+      }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -163,7 +177,14 @@ app.post('/api/auth/login', async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        wallet_balance: user.wallet_balance
+        wallet_balance: user.wallet_balance,
+        mobile: user.mobile,
+        address: user.address,
+        age: user.age,
+        gender: user.gender,
+        username: user.username,
+        profile_pic: user.profile_pic,
+        avatar_shape: user.avatar_shape || 'circle'
       }
     });
   } catch (err) {
@@ -228,7 +249,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
-    const user = await db.get("SELECT user_id, name, email, role, wallet_balance FROM Users WHERE user_id = ?", [req.user.user_id]);
+    const user = await db.get("SELECT user_id, name, email, role, wallet_balance, mobile, address, age, gender, username, profile_pic, avatar_shape FROM Users WHERE user_id = ?", [req.user.user_id]);
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
   } catch (err) {
@@ -252,6 +273,73 @@ app.post('/api/auth/me', authenticateToken, async (req, res) => {
     );
 
     res.json({ message: 'Balance loaded successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/auth/profile', authenticateToken, async (req, res) => {
+  const { name, email, mobile, address, age, gender, username, profile_pic, avatar_shape } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ error: 'Name and email are required' });
+  }
+
+  try {
+    const existing = await db.get("SELECT * FROM Users WHERE email = ? AND user_id != ?", [email, req.user.user_id]);
+    if (existing) {
+      return res.status(400).json({ error: 'This email is already registered to another account' });
+    }
+
+    if (username) {
+      const existingUsername = await db.get("SELECT * FROM Users WHERE username = ? AND user_id != ?", [username, req.user.user_id]);
+      if (existingUsername) {
+        return res.status(400).json({ error: 'This username is already taken' });
+      }
+    }
+
+    await db.run(
+      "UPDATE Users SET name = ?, email = ?, mobile = ?, address = ?, age = ?, gender = ?, username = ?, profile_pic = ?, avatar_shape = ? WHERE user_id = ?",
+      [
+        name, 
+        email, 
+        mobile || null, 
+        address || null, 
+        age ? parseInt(age) : null, 
+        gender || null, 
+        username || null, 
+        profile_pic || null, 
+        avatar_shape || 'circle',
+        req.user.user_id
+      ]
+    );
+    const updatedUser = await db.get("SELECT user_id, name, email, role, wallet_balance, mobile, address, age, gender, username, profile_pic, avatar_shape FROM Users WHERE user_id = ?", [req.user.user_id]);
+    
+    res.json({ message: 'Profile updated successfully!', user: updatedUser });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/auth/change-password', authenticateToken, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Current password and new password are required' });
+  }
+
+  try {
+    const user = await db.get("SELECT * FROM Users WHERE user_id = ?", [req.user.user_id]);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const validPass = bcrypt.compareSync(currentPassword, user.password);
+    if (!validPass) {
+      return res.status(400).json({ error: 'Current password does not match' });
+    }
+
+    const salt = bcrypt.genSaltSync(10);
+    const hashedPassword = bcrypt.hashSync(newPassword, salt);
+
+    await db.run("UPDATE Users SET password = ? WHERE user_id = ?", [hashedPassword, req.user.user_id]);
+    res.json({ message: 'Password changed successfully!' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
