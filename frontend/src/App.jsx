@@ -118,6 +118,27 @@ export default function App() {
     };
   }, [isDraggingChat, dragOffset]);
 
+  // Click outside on screen to minimize chatbot
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!isChatOpen) return;
+      const chatWidget = document.getElementById('chat-widget-container');
+      if (chatWidget && !chatWidget.contains(e.target)) {
+        setIsChatOpen(false);
+      }
+    };
+
+    if (isChatOpen) {
+      const timer = setTimeout(() => {
+        window.addEventListener('click', handleClickOutside);
+      }, 100);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('click', handleClickOutside);
+      };
+    }
+  }, [isChatOpen]);
+
   // Admin database explorer state
   const [dbTables, setDbTables] = useState([]);
   const [selectedDbTable, setSelectedDbTable] = useState('');
@@ -3461,10 +3482,12 @@ export default function App() {
 
       {/* Live Floating Chat Window - Always Fixed in Lower Right Corner */}
       {isChatOpen && (
-        <div style={{ 
-          position: 'fixed',
-          bottom: '2rem',
-          right: '2rem',
+        <div 
+          id="chat-widget-container"
+          style={{ 
+            position: 'fixed',
+            bottom: '2rem',
+            right: '2rem',
           zIndex: 99999,
           width: '360px', 
           height: '480px', 
