@@ -310,8 +310,56 @@ function createSqliteTables() {
       description TEXT,
       class_date TEXT NOT NULL,
       meet_link TEXT NOT NULL,
+      thumbnail TEXT NULL,
+      lecture_type TEXT DEFAULT 'video',
       status TEXT DEFAULT 'Scheduled',
       FOREIGN KEY (course_id) REFERENCES TeachingCourses(course_id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS StudyNotes (
+      note_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      teacher_id INTEGER NOT NULL,
+      course_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      price REAL DEFAULT 0.0,
+      content TEXT,
+      file_url TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (teacher_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+      FOREIGN KEY (course_id) REFERENCES TeachingCourses(course_id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS NotePurchases (
+      purchase_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER NOT NULL,
+      note_id INTEGER NOT NULL,
+      price REAL NOT NULL,
+      purchase_date TEXT NOT NULL,
+      FOREIGN KEY (student_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+      FOREIGN KEY (note_id) REFERENCES StudyNotes(note_id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS TeacherReviews (
+      review_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER NOT NULL,
+      teacher_id INTEGER NOT NULL,
+      course_id INTEGER NULL,
+      rating INTEGER NOT NULL,
+      comment TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (student_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+      FOREIGN KEY (teacher_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+      FOREIGN KEY (course_id) REFERENCES TeachingCourses(course_id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS WhatsAppChats (
+      chat_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone_number TEXT NOT NULL,
+      sender TEXT NOT NULL,
+      message TEXT NOT NULL,
+      timestamp TEXT NOT NULL,
+      status TEXT DEFAULT 'pending_human'
+    )`,
+    `CREATE TABLE IF NOT EXISTS WhatsAppConfig (
+      config_key TEXT PRIMARY KEY,
+      config_value TEXT NOT NULL
     )`
   ];
 
@@ -395,8 +443,56 @@ async function createMysqlTables() {
       description TEXT,
       class_date VARCHAR(50) NOT NULL,
       meet_link VARCHAR(255) NOT NULL,
+      thumbnail LONGTEXT NULL,
+      lecture_type VARCHAR(50) DEFAULT 'video',
       status VARCHAR(50) DEFAULT 'Scheduled',
       FOREIGN KEY (course_id) REFERENCES TeachingCourses(course_id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS StudyNotes (
+      note_id INT PRIMARY KEY AUTO_INCREMENT,
+      teacher_id INT NOT NULL,
+      course_id INT NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      price DOUBLE DEFAULT 0.0,
+      content LONGTEXT,
+      file_url TEXT,
+      created_at VARCHAR(50) NOT NULL,
+      FOREIGN KEY (teacher_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+      FOREIGN KEY (course_id) REFERENCES TeachingCourses(course_id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS NotePurchases (
+      purchase_id INT PRIMARY KEY AUTO_INCREMENT,
+      student_id INT NOT NULL,
+      note_id INT NOT NULL,
+      price DOUBLE NOT NULL,
+      purchase_date VARCHAR(50) NOT NULL,
+      FOREIGN KEY (student_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+      FOREIGN KEY (note_id) REFERENCES StudyNotes(note_id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS TeacherReviews (
+      review_id INT PRIMARY KEY AUTO_INCREMENT,
+      student_id INT NOT NULL,
+      teacher_id INT NOT NULL,
+      course_id INT NULL,
+      rating INT NOT NULL,
+      comment TEXT,
+      created_at VARCHAR(50) NOT NULL,
+      FOREIGN KEY (student_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+      FOREIGN KEY (teacher_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+      FOREIGN KEY (course_id) REFERENCES TeachingCourses(course_id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS WhatsAppChats (
+      chat_id INT PRIMARY KEY AUTO_INCREMENT,
+      phone_number VARCHAR(255) NOT NULL,
+      sender VARCHAR(50) NOT NULL,
+      message TEXT NOT NULL,
+      timestamp VARCHAR(255) NOT NULL,
+      status VARCHAR(50) DEFAULT 'pending_human'
+    )`,
+    `CREATE TABLE IF NOT EXISTS WhatsAppConfig (
+      config_key VARCHAR(255) PRIMARY KEY,
+      config_value TEXT NOT NULL
     )`
   ];
 
@@ -519,8 +615,56 @@ function seedJsonData() {
 
   const today = new Date().toISOString().split('T')[0];
   jsonDb.data.online_classes = [
-    { class_id: 1, course_id: 1, title: 'Lecture 1: Intro to React hooks', description: 'Getting started with useState and useEffect in Vite.', class_date: `${today} 18:00`, meet_link: 'https://meet.google.com/abc-defg-hij', status: 'Scheduled' },
-    { class_id: 2, course_id: 1, title: 'Lecture 2: Custom Hooks & State Management', description: 'Mastering context API and creating custom React hooks.', class_date: `${today} 20:00`, meet_link: 'https://meet.google.com/qwe-rtyu-iop', status: 'Live' }
+    { class_id: 1, course_id: 1, title: 'Lecture 1: Intro to React hooks', description: 'Getting started with useState and useEffect in Vite.', class_date: `${today} 18:00`, meet_link: 'https://meet.google.com/abc-defg-hij', thumbnail: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80', lecture_type: 'video', status: 'Scheduled' },
+    { class_id: 2, course_id: 1, title: 'Lecture 2: Custom Hooks & State Management', description: 'Mastering context API and creating custom React hooks.', class_date: `${today} 20:00`, meet_link: 'https://zoom.us/j/9876543210', thumbnail: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&auto=format&fit=crop&q=80', lecture_type: 'audio', status: 'Live' }
+  ];
+
+  jsonDb.data.study_notes = [
+    { 
+      note_id: 1, 
+      teacher_id: 2, 
+      course_id: 1, 
+      title: 'Fullstack React & Node Architecture Handbook', 
+      description: 'Comprehensive 45-page reference guide covering Express routing, SQLite migrations, JWT auth, and deployment workflows.', 
+      price: 15.00, 
+      content: '📘 FULLSTACK ARCHITECTURE HANDBOOK\n\nChapter 1: Express Server Initialization\nChapter 2: Relational DB Schemas\nChapter 3: State Management & Custom Hooks', 
+      file_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', 
+      created_at: today 
+    },
+    { 
+      note_id: 2, 
+      teacher_id: 2, 
+      course_id: 2, 
+      title: 'Python Data Structures Cheat Sheet & Algorithms Notes', 
+      description: 'Quick reference for Big-O notation, binary search trees, graph algorithms, and dynamic programming.', 
+      price: 0.00, 
+      content: '📙 DSA CHEAT SHEET\n\n- Arrays & Strings: O(1) Lookup\n- Binary Search: O(log N)\n- QuickSort: O(N log N)', 
+      file_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', 
+      created_at: today 
+    }
+  ];
+
+  jsonDb.data.note_purchases = [];
+
+  jsonDb.data.teacher_reviews = [
+    {
+      review_id: 1,
+      student_id: 3,
+      teacher_id: 2,
+      course_id: 1,
+      rating: 5,
+      comment: "Dr. Helen is an extraordinary instructor! Clear explanations on React state and database architecture.",
+      created_at: today
+    },
+    {
+      review_id: 2,
+      student_id: 3,
+      teacher_id: 2,
+      course_id: 2,
+      rating: 5,
+      comment: "The algorithm cheat sheets provided by Dr. Helen saved me in my interviews. Highly recommended!",
+      created_at: today
+    }
   ];
 
   jsonDb.save();
@@ -872,6 +1016,13 @@ async function migrateColumns() {
       try { await mysqlPool.query("ALTER TABLE Users ADD COLUMN username VARCHAR(255) NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE Users ADD COLUMN profile_pic LONGTEXT NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE Users ADD COLUMN avatar_shape VARCHAR(50) NULL"); } catch (e) {}
+      try { await mysqlPool.query("ALTER TABLE OnlineClasses ADD COLUMN thumbnail LONGTEXT NULL"); } catch (e) {}
+      try { await mysqlPool.query("ALTER TABLE OnlineClasses ADD COLUMN lecture_type VARCHAR(50) DEFAULT 'video'"); } catch (e) {}
+      try { await mysqlPool.query("CREATE TABLE IF NOT EXISTS StudyNotes (note_id INT PRIMARY KEY AUTO_INCREMENT, teacher_id INT NOT NULL, course_id INT NOT NULL, title VARCHAR(255) NOT NULL, description TEXT, price DOUBLE DEFAULT 0.0, content LONGTEXT, file_url TEXT, created_at VARCHAR(50) NOT NULL)"); } catch (e) {}
+      try { await mysqlPool.query("CREATE TABLE IF NOT EXISTS NotePurchases (purchase_id INT PRIMARY KEY AUTO_INCREMENT, student_id INT NOT NULL, note_id INT NOT NULL, price DOUBLE NOT NULL, purchase_date VARCHAR(50) NOT NULL)"); } catch (e) {}
+      try { await mysqlPool.query("CREATE TABLE IF NOT EXISTS TeacherReviews (review_id INT PRIMARY KEY AUTO_INCREMENT, student_id INT NOT NULL, teacher_id INT NOT NULL, course_id INT NULL, rating INT NOT NULL, comment TEXT, created_at VARCHAR(50) NOT NULL)"); } catch (e) {}
+      try { await mysqlPool.query("CREATE TABLE IF NOT EXISTS WhatsAppChats (chat_id INT PRIMARY KEY AUTO_INCREMENT, phone_number VARCHAR(255) NOT NULL, sender VARCHAR(50) NOT NULL, message TEXT NOT NULL, timestamp VARCHAR(255) NOT NULL, status VARCHAR(50) DEFAULT 'pending_human')"); } catch (e) {}
+      try { await mysqlPool.query("CREATE TABLE IF NOT EXISTS WhatsAppConfig (config_key VARCHAR(255) PRIMARY KEY, config_value TEXT NOT NULL)"); } catch (e) {}
     } else {
       // SQLite
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN mobile TEXT NULL", () => resolve())); } catch (e) {}
@@ -881,6 +1032,13 @@ async function migrateColumns() {
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN username TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN profile_pic TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN avatar_shape TEXT NULL", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE OnlineClasses ADD COLUMN thumbnail TEXT NULL", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE OnlineClasses ADD COLUMN lecture_type TEXT DEFAULT 'video'", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("CREATE TABLE IF NOT EXISTS StudyNotes (note_id INTEGER PRIMARY KEY AUTOINCREMENT, teacher_id INTEGER NOT NULL, course_id INTEGER NOT NULL, title TEXT NOT NULL, description TEXT, price REAL DEFAULT 0.0, content TEXT, file_url TEXT, created_at TEXT NOT NULL)", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("CREATE TABLE IF NOT EXISTS NotePurchases (purchase_id INTEGER PRIMARY KEY AUTOINCREMENT, student_id INTEGER NOT NULL, note_id INTEGER NOT NULL, price REAL NOT NULL, purchase_date TEXT NOT NULL)", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("CREATE TABLE IF NOT EXISTS TeacherReviews (review_id INTEGER PRIMARY KEY AUTOINCREMENT, student_id INTEGER NOT NULL, teacher_id INTEGER NOT NULL, course_id INTEGER NULL, rating INTEGER NOT NULL, comment TEXT, created_at TEXT NOT NULL)", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("CREATE TABLE IF NOT EXISTS WhatsAppChats (chat_id INTEGER PRIMARY KEY AUTOINCREMENT, phone_number TEXT NOT NULL, sender TEXT NOT NULL, message TEXT NOT NULL, timestamp TEXT NOT NULL, status TEXT DEFAULT 'pending_human')", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("CREATE TABLE IF NOT EXISTS WhatsAppConfig (config_key TEXT PRIMARY KEY, config_value TEXT NOT NULL)", () => resolve())); } catch (e) {}
     }
   } catch (err) {
     console.error("Migration failed:", err);

@@ -892,3 +892,38 @@ tr:hover td {
 .avatar-upload-container:hover .avatar-hover-label {
   opacity: 1 !important;
 }
+
+/* Red Glowing Chat Close Button */
+.red-glow-close-btn {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #ff6b6b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.2);
+  line-height: 1;
+}
+
+.red-glow-close-btn:hover {
+  background: rgba(239, 68, 68, 0.35);
+  color: #ffffff;
+  border-color: #ef4444;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.85), 0 0 4px #ef4444;
+  transform: scale(1.08);
+}
+
+.red-glow-close-btn:active {
+  background: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 1), 0 0 10px #ffffff;
+  transform: scale(0.92);
+}

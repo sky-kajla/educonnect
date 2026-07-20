@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const db = require('./db');
+const whatsappBot = require('./whatsappBot');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -481,8 +482,89 @@ app.post('/api/admissions/:id/status', authenticateToken, requireAdmin, async (r
 // ----------------------------------------------------
 app.get('/api/teaching-courses', async (req, res) => {
   try {
-    const courses = await db.all("SELECT * FROM TeachingCourses");
+    const courses = await db.all(
+      `SELECT tc.*, u.name as teacher_name, u.profile_pic as teacher_profile_pic,
+              COALESCE(AVG(tr.rating), 5.0) as avg_rating,
+              COUNT(tr.review_id) as review_count
+       FROM TeachingCourses tc
+       JOIN Users u ON tc.teacher_id = u.user_id
+       LEFT JOIN TeacherReviews tr ON tc.teacher_id = tr.teacher_id
+       GROUP BY tc.course_id`
+    );
     res.json(courses);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ----------------------------------------------------
+// Teacher Reviews & Rating System Routes
+// ----------------------------------------------------
+app.get('/api/reviews/teacher/:teacherId', async (req, res) => {
+  const teacherId = parseInt(req.params.teacherId);
+  try {
+    const reviews = await db.all(
+      `SELECT tr.*, u.name as student_name, u.profile_pic as student_profile_pic, tc.title as course_title
+       FROM TeacherReviews tr
+       JOIN Users u ON tr.student_id = u.user_id
+       LEFT JOIN TeachingCourses tc ON tr.course_id = tc.course_id
+       WHERE tr.teacher_id = ?
+       ORDER BY tr.review_id DESC`,
+      [teacherId]
+    );
+
+    const stats = await db.get(
+      "SELECT COUNT(*) as total_reviews, AVG(rating) as avg_rating FROM TeacherReviews WHERE teacher_id = ?",
+      [teacherId]
+    );
+
+    res.json({
+      reviews,
+      total_reviews: stats ? stats.total_reviews : 0,
+      avg_rating: stats && stats.avg_rating ? parseFloat(stats.avg_rating.toFixed(1)) : 5.0
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/reviews/top-teachers', async (req, res) => {
+  try {
+    const topTeachers = await db.all(
+      `SELECT u.user_id, u.name, u.email, u.profile_pic, u.avatar_shape,
+              COALESCE(AVG(tr.rating), 5.0) as avg_rating,
+              COUNT(tr.review_id) as review_count
+       FROM Users u
+       LEFT JOIN TeacherReviews tr ON u.user_id = tr.teacher_id
+       WHERE u.role = 'teacher'
+       GROUP BY u.user_id
+       ORDER BY avg_rating DESC, review_count DESC`
+    );
+    res.json(topTeachers);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/reviews', authenticateToken, async (req, res) => {
+  const { teacher_id, course_id, rating, comment } = req.body;
+  if (!teacher_id || !rating) {
+    return res.status(400).json({ error: 'Teacher ID and Rating (1-5) are required' });
+  }
+
+  const ratingVal = parseInt(rating);
+  if (ratingVal < 1 || ratingVal > 5) {
+    return res.status(400).json({ error: 'Rating must be between 1 and 5 stars' });
+  }
+
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const result = await db.run(
+      "INSERT INTO TeacherReviews (student_id, teacher_id, course_id, rating, comment, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+      [req.user.user_id, parseInt(teacher_id), course_id ? parseInt(course_id) : null, ratingVal, comment || '', today]
+    );
+
+    res.status(201).json({ review_id: result.lastID, message: 'Thank you for rating your instructor! ⭐' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -626,7 +708,7 @@ app.get('/api/classes', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/classes', authenticateToken, requireTeacher, async (req, res) => {
-  const { course_id, title, description, class_date, meet_link } = req.body;
+  const { course_id, title, description, class_date, meet_link, thumbnail, lecture_type } = req.body;
   if (!course_id || !title || !description || !class_date || !meet_link) {
     return res.status(400).json({ error: 'All fields are required' });
   }
@@ -637,12 +719,150 @@ app.post('/api/classes', authenticateToken, requireTeacher, async (req, res) => 
       return res.status(403).json({ error: 'You are not authorized to schedule classes for this course' });
     }
 
+    const defaultThumb = 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=80';
+    const type = lecture_type || 'video';
     const result = await db.run(
-      "INSERT INTO OnlineClasses (course_id, title, description, class_date, meet_link, status) VALUES (?, ?, ?, ?, ?, 'Scheduled')",
-      [course_id, title, description, class_date, meet_link]
+      "INSERT INTO OnlineClasses (course_id, title, description, class_date, meet_link, thumbnail, lecture_type, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'Scheduled')",
+      [course_id, title, description, class_date, meet_link, thumbnail || defaultThumb, type]
     );
 
-    res.status(201).json({ class_id: result.lastID, course_id, title, description, class_date, meet_link, status: 'Scheduled' });
+    res.status(201).json({ class_id: result.lastID, course_id, title, description, class_date, meet_link, thumbnail: thumbnail || defaultThumb, lecture_type: type, status: 'Scheduled' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/classes/:id', authenticateToken, requireTeacher, async (req, res) => {
+  const { title, description, class_date, meet_link, thumbnail, lecture_type } = req.body;
+  const classId = parseInt(req.params.id);
+
+  try {
+    const cls = await db.get("SELECT c.*, tc.teacher_id FROM OnlineClasses c JOIN TeachingCourses tc ON c.course_id = tc.course_id WHERE c.class_id = ?", [classId]);
+    if (!cls) return res.status(404).json({ error: 'Class not found' });
+    if (cls.teacher_id !== req.user.user_id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    await db.run(
+      "UPDATE OnlineClasses SET title = ?, description = ?, class_date = ?, meet_link = ?, thumbnail = ?, lecture_type = ? WHERE class_id = ?",
+      [
+        title || cls.title,
+        description || cls.description,
+        class_date || cls.class_date,
+        meet_link || cls.meet_link,
+        thumbnail || cls.thumbnail,
+        lecture_type || cls.lecture_type || 'video',
+        classId
+      ]
+    );
+
+    res.json({ message: 'Class details updated successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ----------------------------------------------------
+// Study Notes Marketplace APIs (Sell & Buy Notes)
+// ----------------------------------------------------
+app.get('/api/notes', authenticateToken, async (req, res) => {
+  try {
+    const notes = await db.all(
+      `SELECT n.*, tc.title as course_title, u.name as teacher_name 
+       FROM StudyNotes n 
+       JOIN TeachingCourses tc ON n.course_id = tc.course_id 
+       JOIN Users u ON n.teacher_id = u.user_id 
+       ORDER BY n.note_id DESC`
+    );
+
+    const userPurchases = await db.all(
+      "SELECT note_id FROM NotePurchases WHERE student_id = ?",
+      [req.user.user_id]
+    );
+    const purchasedIds = new Set(userPurchases.map(p => p.note_id));
+
+    const enrichedNotes = notes.map(n => ({
+      ...n,
+      is_owner: n.teacher_id === req.user.user_id || req.user.role === 'admin',
+      purchased: n.price === 0 || n.teacher_id === req.user.user_id || req.user.role === 'admin' || purchasedIds.has(n.note_id)
+    }));
+
+    res.json(enrichedNotes);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/notes', authenticateToken, requireTeacher, async (req, res) => {
+  const { course_id, title, description, price, content, file_url } = req.body;
+  if (!course_id || !title || !description) {
+    return res.status(400).json({ error: 'Course, Title, and Description are required' });
+  }
+
+  try {
+    const course = await db.get("SELECT * FROM TeachingCourses WHERE course_id = ? AND teacher_id = ?", [course_id, req.user.user_id]);
+    if (!course) {
+      return res.status(403).json({ error: 'You are not authorized to publish notes for this course' });
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const notePrice = parseFloat(price) || 0.0;
+    const defaultFile = file_url || 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
+
+    const result = await db.run(
+      "INSERT INTO StudyNotes (teacher_id, course_id, title, description, price, content, file_url, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [req.user.user_id, course_id, title, description, notePrice, content || '', defaultFile, today]
+    );
+
+    res.status(201).json({ note_id: result.lastID, message: 'Study note published successfully!' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/notes/:id/purchase', authenticateToken, async (req, res) => {
+  const noteId = parseInt(req.params.id);
+
+  try {
+    const note = await db.get("SELECT * FROM StudyNotes WHERE note_id = ?", [noteId]);
+    if (!note) return res.status(404).json({ error: 'Study note not found' });
+
+    if (note.teacher_id === req.user.user_id) {
+      return res.status(400).json({ error: 'You cannot purchase your own published note' });
+    }
+
+    const existing = await db.get("SELECT * FROM NotePurchases WHERE student_id = ? AND note_id = ?", [req.user.user_id, noteId]);
+    if (existing) {
+      return res.status(400).json({ error: 'You have already purchased this study note' });
+    }
+
+    if (note.price > 0) {
+      const student = await db.get("SELECT wallet_balance FROM Users WHERE user_id = ?", [req.user.user_id]);
+      if (student.wallet_balance < note.price) {
+        return res.status(400).json({ error: 'Insufficient wallet balance to purchase this study note' });
+      }
+
+      await db.run("UPDATE Users SET wallet_balance = wallet_balance - ? WHERE user_id = ?", [note.price, req.user.user_id]);
+      await db.run("UPDATE Users SET wallet_balance = wallet_balance + ? WHERE user_id = ?", [note.price, note.teacher_id]);
+
+      const today = new Date().toISOString().split('T')[0];
+      await db.run(
+        "INSERT INTO Payments (user_id, amount, type, date) VALUES (?, ?, ?, ?)",
+        [req.user.user_id, -note.price, `Study Note Purchase: ${note.title}`, today]
+      );
+      await db.run(
+        "INSERT INTO Payments (user_id, amount, type, date) VALUES (?, ?, ?, ?)",
+        [note.teacher_id, note.price, `Study Note Sale: ${note.title}`, today]
+      );
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    await db.run(
+      "INSERT INTO NotePurchases (student_id, note_id, price, purchase_date) VALUES (?, ?, ?, ?)",
+      [req.user.user_id, noteId, note.price, today]
+    );
+
+    res.json({ message: 'Study note unlocked successfully!', note });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -882,6 +1102,129 @@ app.get('/api/admin/stats', authenticateToken, requireAdmin, async (req, res) =>
       totalCommissionPaid: parseFloat(totalCommissionPaid.toFixed(2)),
       totalCourseSales: parseFloat(totalCourseSales.toFixed(2))
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ----------------------------------------------------
+// WhatsApp & AI Chatbot Endpoints
+// ----------------------------------------------------
+
+// On-Site AI Chatbot Widget Assistant Query
+app.post('/api/chatbot/ask', (req, res) => {
+  const { message } = req.body;
+  if (!message) return res.status(400).json({ error: 'Message is required' });
+  const reply = whatsappBot.generateBotAnswer(message);
+  res.json({ reply });
+});
+
+// WhatsApp Bot Config
+app.get('/api/whatsapp/config', (req, res) => {
+  res.json(whatsappBot.botConfig);
+});
+
+app.post('/api/whatsapp/config', authenticateToken, requireAdmin, (req, res) => {
+  const { enabled, mode, delaySeconds, defaultGreeting, adminPhoneNumber, whatsappPhoneId, whatsappToken, webhookVerifyToken } = req.body;
+  
+  if (enabled !== undefined) whatsappBot.botConfig.enabled = Boolean(enabled);
+  if (mode) whatsappBot.botConfig.mode = mode;
+  if (delaySeconds !== undefined) whatsappBot.botConfig.delaySeconds = parseInt(delaySeconds);
+  if (defaultGreeting !== undefined) whatsappBot.botConfig.defaultGreeting = defaultGreeting;
+  if (adminPhoneNumber !== undefined) whatsappBot.botConfig.adminPhoneNumber = adminPhoneNumber;
+  if (whatsappPhoneId !== undefined) whatsappBot.botConfig.whatsappPhoneId = whatsappPhoneId;
+  if (whatsappToken !== undefined) whatsappBot.botConfig.whatsappToken = whatsappToken;
+  if (webhookVerifyToken !== undefined) whatsappBot.botConfig.webhookVerifyToken = webhookVerifyToken;
+
+  res.json({ message: 'WhatsApp Bot configuration updated successfully', config: whatsappBot.botConfig });
+});
+
+// WhatsApp Meta Cloud Webhook Verification (GET)
+app.get('/api/whatsapp/webhook', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+
+  if (mode === 'subscribe' && token === whatsappBot.botConfig.webhookVerifyToken) {
+    console.log('[WhatsApp Webhook Verified Successfully]');
+    res.status(200).send(challenge);
+  } else {
+    res.sendStatus(403);
+  }
+});
+
+// WhatsApp Webhook Listener (POST)
+app.post('/api/whatsapp/webhook', async (req, res) => {
+  try {
+    let phoneNumber = '';
+    let messageText = '';
+
+    // Handle Meta Graph API payload
+    if (req.body.object && req.body.entry) {
+      const entry = req.body.entry[0];
+      const changes = entry.changes && entry.changes[0];
+      const value = changes && changes.value;
+      const messageObj = value && value.messages && value.messages[0];
+
+      if (messageObj && messageObj.text) {
+        phoneNumber = messageObj.from;
+        messageText = messageObj.text.body;
+      }
+    } else if (req.body.phoneNumber && req.body.message) {
+      // Handle Simulation / Direct test payload
+      phoneNumber = req.body.phoneNumber;
+      messageText = req.body.message;
+    }
+
+    if (phoneNumber && messageText) {
+      const today = new Date().toISOString();
+      await db.run(
+        "INSERT INTO WhatsAppChats (phone_number, sender, message, timestamp, status) VALUES (?, ?, ?, ?, ?)",
+        [phoneNumber, 'user', messageText, today, 'pending_human']
+      );
+
+      // Trigger auto-reply engine (immediate or delayed)
+      whatsappBot.handleIncomingMessage(db, { phone_number: phoneNumber, message: messageText });
+    }
+
+    res.status(200).send('EVENT_RECEIVED');
+  } catch (err) {
+    console.error('[WhatsApp Webhook Error]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Fetch WhatsApp Chat History Log
+app.get('/api/whatsapp/chats', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const chats = await db.all("SELECT * FROM WhatsAppChats ORDER BY timestamp DESC LIMIT 100");
+    res.json(chats);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Human Admin Manual Reply via WhatsApp
+app.post('/api/whatsapp/chats/reply', authenticateToken, requireAdmin, async (req, res) => {
+  const { phoneNumber, message } = req.body;
+  if (!phoneNumber || !message) {
+    return res.status(400).json({ error: 'PhoneNumber and message are required' });
+  }
+
+  try {
+    // Cancel pending automated bot timer if human admin replies first
+    whatsappBot.cancelPendingBotReply(phoneNumber);
+
+    // Send outgoing WhatsApp message
+    const sendResult = await whatsappBot.sendWhatsAppMessage(phoneNumber, message);
+
+    const today = new Date().toISOString();
+    await db.run(
+      "INSERT INTO WhatsAppChats (phone_number, sender, message, timestamp, status) VALUES (?, ?, ?, ?, ?)",
+      [phoneNumber, 'human_admin', message, today, 'replied_by_human']
+    );
+
+    res.json({ message: 'Reply sent successfully to WhatsApp user', sendResult });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
