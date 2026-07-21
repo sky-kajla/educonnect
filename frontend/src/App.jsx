@@ -3587,106 +3587,229 @@ export default function App() {
       )}
 
       {/* Three-Dot Master Navigation Drawer Modal */}
+      {/* Three-Dot Master Navigation Drawer Modal (MyJio Profile Style) */}
       {showMasterNavModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
-          <div style={{ background: '#0b0f19', border: '1px solid var(--border-glass-hover)', borderRadius: '20px', maxWidth: '800px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem', boxShadow: '0 25px 60px rgba(0,0,0,0.9)' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ background: 'var(--bg-sidebar)', border: '1px solid var(--border-glass-hover)', borderRadius: '24px', maxWidth: '480px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '1.75rem', boxShadow: '0 25px 60px rgba(0,0,0,0.95)', position: 'relative' }}>
             
-            {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+            {/* Drawer Top Navigation Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-main)', fontWeight: 'bold', fontSize: '1.1rem' }} onClick={() => setShowMasterNavModal(false)}>
+                <span>‹</span> Profile
+              </div>
+              <button 
+                type="button"
+                style={{ background: 'none', border: 'none', color: 'var(--text-main)', fontSize: '1.5rem', cursor: 'pointer', padding: '0.25rem' }} 
+                onClick={() => setShowMasterNavModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* User Profile Summary Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
+              {user ? (
+                user.profile_pic ? (
+                  <img src={user.profile_pic} alt="Avatar" style={{ width: '56px', height: '56px', borderRadius: getAvatarBorderRadius(user.avatar_shape), objectFit: 'cover', border: '2px solid var(--primary)' }} />
+                ) : (
+                  <div style={{ width: '56px', height: '56px', borderRadius: getAvatarBorderRadius(user.avatar_shape), background: 'linear-gradient(135deg, #38bdf8, #6366f1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', fontWeight: 'bold', flexShrink: 0 }}>
+                    {(user.name || 'User').split(' ').filter(Boolean).map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+                  </div>
+                )
+              ) : (
+                <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', fontWeight: 'bold', flexShrink: 0 }}>
+                  👤
+                </div>
+              )}
               <div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--accent)', textTransform: 'uppercase', fontWeight: 'bold', letterSpacing: '0.08em' }}>Master Navigation Hub</span>
-                <h2 style={{ margin: '0.15rem 0 0 0', color: '#fff', fontSize: '1.5rem' }}>Explore All EduConnect Workspace Features</h2>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-main)', margin: 0 }}>
+                  {user ? user.name : 'Guest Visitor'}
+                </h3>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                  | {user ? (user.role.charAt(0).toUpperCase() + user.role.slice(1)) : 'Unauthenticated'}
+                </div>
               </div>
-              <button className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.85rem' }} onClick={() => setShowMasterNavModal(false)}>✕ Close Menu</button>
             </div>
 
-            {/* Categorized Grid of All Modules */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+            {/* Divider Line */}
+            <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '1rem 0 1.25rem 0' }}></div>
+
+            {/* Section Category Title */}
+            <h4 style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--text-main)', marginBottom: '1rem', letterSpacing: '-0.02em' }}>
+              Explore EduConnect
+            </h4>
+
+            {/* Clean Vertical List of Ingredients & Options */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
               
-              {/* Category 1: Main Hub */}
-              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-glass)' }}>
-                <h4 style={{ color: 'var(--accent)', fontSize: '0.9rem', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📌 Main Hub</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', textAlign: 'left' }} onClick={() => { setCurrentTab('home'); setShowMasterNavModal(false); }}>
-                    🏠 Home Dashboard
-                  </button>
-                  <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', textAlign: 'left' }} onClick={() => { setCurrentTab('colleges'); setShowMasterNavModal(false); }}>
-                    🏫 Partner Colleges
-                  </button>
-                  <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', textAlign: 'left' }} onClick={() => { setCurrentTab('marketplace'); setShowMasterNavModal(false); }}>
-                    🛒 Course Marketplace
-                  </button>
-                  <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', textAlign: 'left', borderColor: '#25D366', color: '#25D366', fontWeight: 'bold' }} onClick={() => { setCurrentTab('home'); setIsChatOpen(true); setShowMasterNavModal(false); }}>
-                    💬 EduBot AI & WhatsApp Support
-                  </button>
+              {/* Wallet & Recharge */}
+              <div 
+                style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '0.75rem 0.5rem', borderRadius: '12px', cursor: 'pointer', transition: 'background 0.15s' }}
+                onClick={() => { if (!user) setCurrentTab('auth'); else setCurrentTab('payments'); setShowMasterNavModal(false); }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>
+                  ₹
                 </div>
+                <div style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--text-main)' }}>Recharge & Wallet Ledger</div>
               </div>
 
-              {/* Category 2: Student Desk (Visible to Students & Admins) */}
-              {(!user || user.role === 'student' || user.role === 'admin') && (
-                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-glass)' }}>
-                  <h4 style={{ color: '#38bdf8', fontSize: '0.9rem', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🎓 Student Desk</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', textAlign: 'left' }} onClick={() => { setCurrentTab('classes'); setShowMasterNavModal(false); }}>
-                      🎥 Virtual Classroom
-                    </button>
-                    <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', textAlign: 'left' }} onClick={() => { setCurrentTab('notes'); setShowMasterNavModal(false); }}>
-                      📚 Study Notes Marketplace
-                    </button>
-                    <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', textAlign: 'left' }} onClick={() => { setCurrentTab('admissions'); setShowMasterNavModal(false); }}>
-                      📋 Referrals & Rewards
-                    </button>
-                  </div>
+              {/* Pay Bill / Admissions */}
+              <div 
+                style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '0.75rem 0.5rem', borderRadius: '12px', cursor: 'pointer', transition: 'background 0.15s' }}
+                onClick={() => { setCurrentTab('admissions'); setShowMasterNavModal(false); }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>
+                  📋
                 </div>
-              )}
+                <div style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--text-main)' }}>Student Referrals & Rewards</div>
+              </div>
 
-              {/* Category 3: Teacher Console (Visible to Teachers & Admins) */}
+              {/* Colleges */}
+              <div 
+                style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '0.75rem 0.5rem', borderRadius: '12px', cursor: 'pointer', transition: 'background 0.15s' }}
+                onClick={() => { setCurrentTab('colleges'); setShowMasterNavModal(false); }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>
+                  🏫
+                </div>
+                <div style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--text-main)' }}>Partner Colleges Directory</div>
+              </div>
+
+              {/* Study Notes Marketplace */}
+              <div 
+                style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '0.75rem 0.5rem', borderRadius: '12px', cursor: 'pointer', transition: 'background 0.15s' }}
+                onClick={() => { setCurrentTab('notes'); setShowMasterNavModal(false); }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>
+                  📚
+                </div>
+                <div style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--text-main)' }}>Study Notes Marketplace</div>
+              </div>
+
+              {/* Virtual Classes */}
+              <div 
+                style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '0.75rem 0.5rem', borderRadius: '12px', cursor: 'pointer', transition: 'background 0.15s' }}
+                onClick={() => { setCurrentTab('classes'); setShowMasterNavModal(false); }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>
+                  🎥
+                </div>
+                <div style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--text-main)' }}>Virtual Classes & Broadcasts</div>
+              </div>
+
+              {/* Teacher Console (Teacher & Admin Only) */}
               {(user?.role === 'teacher' || user?.role === 'admin') && (
-                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-glass)' }}>
-                  <h4 style={{ color: '#c084fc', fontSize: '0.9rem', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>👨‍🏫 Teacher Console</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', textAlign: 'left' }} onClick={() => { setCurrentTab('teacher'); setShowMasterNavModal(false); }}>
-                      👨‍🏫 Host Classes & Sell Notes
-                    </button>
-                    <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', textAlign: 'left' }} onClick={() => { setCurrentTab('classes'); setShowMasterNavModal(false); }}>
-                      🎙️ Live Broadcast Visualizer
-                    </button>
+                <div 
+                  style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '0.75rem 0.5rem', borderRadius: '12px', cursor: 'pointer', transition: 'background 0.15s' }}
+                  onClick={() => { setCurrentTab('teacher'); setShowMasterNavModal(false); }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(192, 132, 252, 0.15)', color: '#c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>
+                    👨‍🏫
                   </div>
+                  <div style={{ fontWeight: '600', fontSize: '1rem', color: '#c084fc' }}>Teacher Host Console</div>
                 </div>
               )}
 
-              {/* Category 4: Admin Management Console (STRICTLY visible to Admin ONLY) */}
+              {/* Admin Control Panel (Admin Only) */}
               {user?.role === 'admin' && (
-                <div style={{ background: 'rgba(239, 68, 68, 0.04)', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                  <h4 style={{ color: 'var(--danger)', fontSize: '0.9rem', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>⚙️ Admin Console</h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', textAlign: 'left', borderColor: 'var(--danger)', color: 'var(--danger)' }} onClick={() => { setCurrentTab('admin'); setShowMasterNavModal(false); }}>
-                      ⚙️ Admin Control Panel
-                    </button>
-                    <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', textAlign: 'left' }} onClick={() => { setCurrentTab('admin'); setAdminSubTab('db_explorer'); setShowMasterNavModal(false); }}>
-                      🗄️ Database Console
-                    </button>
-                    <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', textAlign: 'left' }} onClick={() => { setCurrentTab('admin'); setAdminSubTab('whatsapp_bot'); setShowMasterNavModal(false); }}>
-                      💬 WhatsApp Engine Setup
-                    </button>
+                <>
+                  <div 
+                    style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '0.75rem 0.5rem', borderRadius: '12px', cursor: 'pointer', transition: 'background 0.15s' }}
+                    onClick={() => { setCurrentTab('admin'); setAdminSubTab('overview'); setShowMasterNavModal(false); }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>
+                      ⚙️
+                    </div>
+                    <div style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--danger)' }}>Admin Management Panel</div>
                   </div>
-                </div>
+
+                  <div 
+                    style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '0.75rem 0.5rem', borderRadius: '12px', cursor: 'pointer', transition: 'background 0.15s' }}
+                    onClick={() => { setCurrentTab('admin'); setAdminSubTab('db_explorer'); setShowMasterNavModal(false); }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>
+                      🗄️
+                    </div>
+                    <div style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--text-main)' }}>Database Console</div>
+                  </div>
+                </>
               )}
 
-              {/* Category 5: Account & Wallet */}
-              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-glass)' }}>
-                <h4 style={{ color: 'var(--success)', fontSize: '0.9rem', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>💳 Account & Wallet</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', textAlign: 'left' }} onClick={() => { if (!user) { setCurrentTab('auth'); } else { setCurrentTab('payments'); } setShowMasterNavModal(false); }}>
-                    💳 Wallet & Cash Ledger
-                  </button>
-                  <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', textAlign: 'left' }} onClick={() => { if (!user) { setCurrentTab('auth'); } else { setCurrentTab('profile'); } setShowMasterNavModal(false); }}>
-                    👤 Profile & Credentials
-                  </button>
+              {/* EduBot AI & WhatsApp */}
+              <div 
+                style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '0.75rem 0.5rem', borderRadius: '12px', cursor: 'pointer', transition: 'background 0.15s' }}
+                onClick={() => { setCurrentTab('home'); setIsChatOpen(true); setShowMasterNavModal(false); }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(37, 211, 102, 0.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(37, 211, 102, 0.15)', color: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>
+                  💬
                 </div>
+                <div style={{ fontWeight: '600', fontSize: '1rem', color: '#25D366' }}>EduBot AI & WhatsApp Support</div>
+              </div>
+
+              {/* Profile & Credentials */}
+              <div 
+                style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '0.75rem 0.5rem', borderRadius: '12px', cursor: 'pointer', transition: 'background 0.15s' }}
+                onClick={() => { if (!user) setCurrentTab('auth'); else setCurrentTab('profile'); setShowMasterNavModal(false); }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>
+                  👤
+                </div>
+                <div style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--text-main)' }}>Profile & Credentials</div>
+              </div>
+
+              {/* Terms & Conditions */}
+              <div 
+                style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '0.75rem 0.5rem', borderRadius: '12px', cursor: 'pointer', transition: 'background 0.15s' }}
+                onClick={() => { showToast("Terms & Conditions: EduConnect Platform Policy", "info"); setShowMasterNavModal(false); }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>
+                  📑
+                </div>
+                <div style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--text-main)' }}>Terms & Conditions</div>
+              </div>
+
+              {/* Privacy Policy */}
+              <div 
+                style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '0.75rem 0.5rem', borderRadius: '12px', cursor: 'pointer', transition: 'background 0.15s' }}
+                onClick={() => { showToast("Privacy Policy: End-to-end encrypted user privacy", "info"); setShowMasterNavModal(false); }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>
+                  ℹ️
+                </div>
+                <div style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--text-main)' }}>Privacy Policy</div>
               </div>
 
             </div>
+
+            {/* Bottom Footer Version Tag */}
+            <div style={{ textAlign: 'center', marginTop: '1.75rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              App Version 8.0.35
+            </div>
+
           </div>
         </div>
       )}
