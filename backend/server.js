@@ -1249,10 +1249,111 @@ app.post('/api/whatsapp/chats/reply', authenticateToken, requireAdmin, async (re
 });
 
 // ----------------------------------------------------
+// WhatsApp Configuration & Admin Phone Number Settings
+// ----------------------------------------------------
+
+// Get current WhatsApp Config & Admin Support Phone Number (Public endpoint)
+app.get('/api/whatsapp/config', async (req, res) => {
+  try {
+    const rows = await db.all("SELECT * FROM WhatsAppConfig");
+    const configMap = {};
+    (rows || []).forEach(r => {
+      configMap[r.config_key] = r.config_value;
+    });
+
+    res.json({
+      adminPhoneNumber: configMap.admin_phone_number || whatsappBot.botConfig.adminPhoneNumber || '+919876543210',
+      enabled: configMap.bot_enabled !== 'false',
+      mode: configMap.bot_mode || whatsappBot.botConfig.mode || 'hybrid',
+      delaySeconds: parseInt(configMap.delay_seconds || '15', 10),
+      defaultGreeting: configMap.default_greeting || whatsappBot.botConfig.defaultGreeting
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update WhatsApp Support Phone Number & Bot Settings (Admin Only)
+app.post('/api/whatsapp/config', authenticateToken, requireAdmin, async (req, res) => {
+  const { adminPhoneNumber, enabled, mode, delaySeconds, defaultGreeting } = req.body;
+  try {
+    if (adminPhoneNumber !== undefined) {
+      await db.run(
+        DB_TYPE === 'sqlite' 
+          ? "INSERT OR REPLACE INTO WhatsAppConfig (config_key, config_value) VALUES ('admin_phone_number', ?)"
+          : "INSERT INTO WhatsAppConfig (config_key, config_value) VALUES ('admin_phone_number', ?) ON DUPLICATE KEY UPDATE config_value = ?",
+        DB_TYPE === 'sqlite' ? [adminPhoneNumber] : [adminPhoneNumber, adminPhoneNumber]
+      );
+      whatsappBot.botConfig.adminPhoneNumber = adminPhoneNumber;
+    }
+
+    if (enabled !== undefined) {
+      const val = enabled ? 'true' : 'false';
+      await db.run(
+        DB_TYPE === 'sqlite' 
+          ? "INSERT OR REPLACE INTO WhatsAppConfig (config_key, config_value) VALUES ('bot_enabled', ?)"
+          : "INSERT INTO WhatsAppConfig (config_key, config_value) VALUES ('bot_enabled', ?) ON DUPLICATE KEY UPDATE config_value = ?",
+        DB_TYPE === 'sqlite' ? [val] : [val, val]
+      );
+      whatsappBot.botConfig.enabled = !!enabled;
+    }
+
+    if (mode !== undefined) {
+      await db.run(
+        DB_TYPE === 'sqlite' 
+          ? "INSERT OR REPLACE INTO WhatsAppConfig (config_key, config_value) VALUES ('bot_mode', ?)"
+          : "INSERT INTO WhatsAppConfig (config_key, config_value) VALUES ('bot_mode', ?) ON DUPLICATE KEY UPDATE config_value = ?",
+        DB_TYPE === 'sqlite' ? [mode] : [mode, mode]
+      );
+      whatsappBot.botConfig.mode = mode;
+    }
+
+    if (delaySeconds !== undefined) {
+      await db.run(
+        DB_TYPE === 'sqlite' 
+          ? "INSERT OR REPLACE INTO WhatsAppConfig (config_key, config_value) VALUES ('delay_seconds', ?)"
+          : "INSERT INTO WhatsAppConfig (config_key, config_value) VALUES ('delay_seconds', ?) ON DUPLICATE KEY UPDATE config_value = ?",
+        DB_TYPE === 'sqlite' ? [String(delaySeconds)] : [String(delaySeconds), String(delaySeconds)]
+      );
+      whatsappBot.botConfig.delaySeconds = parseInt(delaySeconds, 10);
+    }
+
+    if (defaultGreeting !== undefined) {
+      await db.run(
+        DB_TYPE === 'sqlite' 
+          ? "INSERT OR REPLACE INTO WhatsAppConfig (config_key, config_value) VALUES ('default_greeting', ?)"
+          : "INSERT INTO WhatsAppConfig (config_key, config_value) VALUES ('default_greeting', ?) ON DUPLICATE KEY UPDATE config_value = ?",
+        DB_TYPE === 'sqlite' ? [defaultGreeting] : [defaultGreeting, defaultGreeting]
+      );
+      whatsappBot.botConfig.defaultGreeting = defaultGreeting;
+    }
+
+    res.json({ message: 'WhatsApp support configuration permanently updated in database.', config: whatsappBot.botConfig });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ----------------------------------------------------
 // Server Start
 // ----------------------------------------------------
 db.init()
-  .then(() => {
+  .then(async () => {
+    // Load persisted WhatsApp config from database
+    try {
+      const rows = await db.all("SELECT * FROM WhatsAppConfig");
+      (rows || []).forEach(r => {
+        if (r.config_key === 'admin_phone_number') whatsappBot.botConfig.adminPhoneNumber = r.config_value;
+        if (r.config_key === 'bot_enabled') whatsappBot.botConfig.enabled = (r.config_value === 'true');
+        if (r.config_key === 'bot_mode') whatsappBot.botConfig.mode = r.config_value;
+        if (r.config_key === 'delay_seconds') whatsappBot.botConfig.delaySeconds = parseInt(r.config_value, 10);
+        if (r.config_key === 'default_greeting') whatsappBot.botConfig.defaultGreeting = r.config_value;
+      });
+      console.log(`[WhatsApp Engine] Loaded permanent admin support phone number: ${whatsappBot.botConfig.adminPhoneNumber}`);
+    } catch (e) {
+      console.error('Failed to load initial WhatsApp config:', e);
+    }
+
     app.listen(PORT, () => {
       console.log(`Backend server running on http://localhost:${PORT}`);
     });

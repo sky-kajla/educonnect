@@ -425,6 +425,7 @@ export default function App() {
     fetchOnlineClasses();
     fetchStudyNotes();
     fetchTopTeachers();
+    fetchWaConfig();
     if (user) {
       fetchAdmissions();
       fetchPayments();
