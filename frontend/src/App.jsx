@@ -3159,7 +3159,7 @@ export default function App() {
             {/* Three-Dot Master Menu Button Grouped Immediately Next to EduConnect */}
             <button 
               type="button" 
-              className="three-dot-menu-btn"
+              className={`three-dot-menu-btn ${showMasterNavModal ? 'active' : ''}`}
               title="All Navigation Features (Master Menu)"
               onClick={(e) => {
                 e.stopPropagation();
