@@ -3148,42 +3148,39 @@ export default function App() {
       {/* SaaS Sidebar Navigation */}
       <aside className="sidebar">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <div className="sidebar-logo" style={{ cursor: 'pointer' }} onClick={() => setCurrentTab('home')}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-              </svg>
-              <span>EduConnect</span>
-            </div>
-
-            {/* Small Upper Three-Dot Master Menu Badge */}
-            <button 
-              type="button" 
-              title="All Navigation Features (Master Menu)"
-              style={{ 
-                background: 'rgba(56, 189, 248, 0.18)', 
-                border: '1px solid rgba(56, 189, 248, 0.5)', 
-                color: 'var(--accent)', 
-                borderRadius: '50%', 
-                width: '22px', 
-                height: '22px', 
-                display: 'inline-flex',
-                alignItems: 'center',
-                justify: 'center',
-                cursor: 'pointer', 
-                fontSize: '0.95rem', 
-                fontWeight: 'bold',
-                lineHeight: 1,
-                marginTop: '-0.75rem',
-                padding: 0,
-                boxShadow: '0 0 8px rgba(56, 189, 248, 0.3)',
-                transition: 'all 0.2s ease'
-              }}
-              onClick={() => setShowMasterNavModal(true)}
-            >
-              ⋮
-            </button>
+          <div className="sidebar-logo" style={{ cursor: 'pointer' }} onClick={() => setCurrentTab('home')}>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+            <span>EduConnect</span>
           </div>
+
+          {/* Perfectly Centered Three-Dot Master Menu Button */}
+          <button 
+            type="button" 
+            title="All Navigation Features (Master Menu)"
+            style={{ 
+              background: 'rgba(99, 102, 241, 0.15)', 
+              border: '1px solid rgba(99, 102, 241, 0.4)', 
+              color: 'var(--primary)', 
+              borderRadius: '8px', 
+              width: '28px', 
+              height: '28px', 
+              display: 'flex',
+              alignItems: 'center',
+              justify: 'center',
+              cursor: 'pointer', 
+              fontSize: '1.15rem', 
+              fontWeight: 'bold',
+              lineHeight: 1,
+              padding: 0,
+              boxShadow: '0 0 10px rgba(99, 102, 241, 0.25)',
+              transition: 'all 0.2s ease'
+            }}
+            onClick={() => setShowMasterNavModal(true)}
+          >
+            <span style={{ display: 'block', lineHeight: 1, marginTop: '-2px' }}>⋮</span>
+          </button>
         </div>
 
         {/* Active Role Workspace Pill */}
