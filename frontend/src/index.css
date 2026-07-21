@@ -168,8 +168,10 @@ a {
   bottom: 0;
   left: 0;
   z-index: 100;
-  padding: 1.5rem 1rem;
+  padding: 1.25rem 1rem;
   transition: var(--transition-smooth);
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .sidebar-logo {
@@ -196,7 +198,10 @@ a {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  flex: 1;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+  scrollbar-width: thin;
 }
 
 .sidebar-item {
@@ -228,7 +233,8 @@ a {
 .sidebar-footer {
   margin-top: auto;
   border-top: 1px solid var(--border-glass);
-  padding-top: 1.25rem;
+  padding-top: 1rem;
+  flex-shrink: 0;
 }
 
 /* User Card inside Sidebar */
