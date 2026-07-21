@@ -92,6 +92,21 @@ function authenticateToken(req, res, next) {
   });
 }
 
+function optionalAuth(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    req.user = err ? null : decoded;
+    next();
+  });
+}
+
 function requireAdmin(req, res, next) {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Admin privileges required' });
@@ -671,10 +686,10 @@ app.get('/api/enrollments/teacher', authenticateToken, requireTeacher, async (re
 // ----------------------------------------------------
 // Online Classes APIs
 // ----------------------------------------------------
-app.get('/api/classes', authenticateToken, async (req, res) => {
+app.get('/api/classes', optionalAuth, async (req, res) => {
   try {
     let classes;
-    if (req.user.role === 'admin') {
+    if (!req.user || req.user.role === 'admin') {
       classes = await db.all(
         `SELECT c.*, tc.title as course_title, u.name as teacher_name 
          FROM OnlineClasses c 
@@ -765,7 +780,7 @@ app.put('/api/classes/:id', authenticateToken, requireTeacher, async (req, res) 
 // ----------------------------------------------------
 // Study Notes Marketplace APIs (Sell & Buy Notes)
 // ----------------------------------------------------
-app.get('/api/notes', authenticateToken, async (req, res) => {
+app.get('/api/notes', optionalAuth, async (req, res) => {
   try {
     const notes = await db.all(
       `SELECT n.*, tc.title as course_title, u.name as teacher_name 
@@ -775,16 +790,19 @@ app.get('/api/notes', authenticateToken, async (req, res) => {
        ORDER BY n.note_id DESC`
     );
 
-    const userPurchases = await db.all(
-      "SELECT note_id FROM NotePurchases WHERE student_id = ?",
-      [req.user.user_id]
-    );
+    let userPurchases = [];
+    if (req.user) {
+      userPurchases = await db.all(
+        "SELECT note_id FROM NotePurchases WHERE student_id = ?",
+        [req.user.user_id]
+      );
+    }
     const purchasedIds = new Set(userPurchases.map(p => p.note_id));
 
     const enrichedNotes = notes.map(n => ({
       ...n,
-      is_owner: n.teacher_id === req.user.user_id || req.user.role === 'admin',
-      purchased: n.price === 0 || n.teacher_id === req.user.user_id || req.user.role === 'admin' || purchasedIds.has(n.note_id)
+      is_owner: req.user ? (n.teacher_id === req.user.user_id || req.user.role === 'admin') : false,
+      purchased: n.price === 0 || (req.user && (n.teacher_id === req.user.user_id || req.user.role === 'admin' || purchasedIds.has(n.note_id)))
     }));
 
     res.json(enrichedNotes);
