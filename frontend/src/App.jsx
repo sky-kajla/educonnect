@@ -3297,7 +3297,7 @@ export default function App() {
                   <img src={user.profile_pic} alt="Avatar" style={{ width: '40px', height: '40px', borderRadius: getAvatarBorderRadius(user.avatar_shape), objectFit: 'cover', border: '1px solid var(--border-glass)' }} />
                 ) : (
                   <div style={{ display: 'flex', width: '40px', height: '40px', borderRadius: getAvatarBorderRadius(user.avatar_shape), alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', color: '#fff', fontSize: '0.9rem', fontWeight: 'bold' }}>
-                    {user.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+                    {(user.name || 'User').split(' ').filter(Boolean).map(n=>n[0]).join('').substring(0,2).toUpperCase()}
                   </div>
                 )}
                 <div className="user-profile-details" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -3346,7 +3346,7 @@ export default function App() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-glass)', padding: '0.4rem 1rem', borderRadius: '8px' }}>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Wallet Balance:</span>
-                <strong style={{ color: 'var(--success)' }}>${user.wallet_balance.toFixed(2)}</strong>
+                <strong style={{ color: 'var(--success)' }}>${(user.wallet_balance || 0).toFixed(2)}</strong>
               </div>
               <button className="btn btn-secondary" style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', background: 'rgba(16, 185, 129, 0.1)', borderColor: 'var(--success)', color: 'var(--success)' }} onClick={() => {
                 const addAmount = 1000;
@@ -3367,7 +3367,7 @@ export default function App() {
                   <img src={user.profile_pic} alt="Avatar" style={{ width: '32px', height: '32px', borderRadius: getAvatarBorderRadius(user.avatar_shape), objectFit: 'cover', border: '2px solid var(--primary)' }} />
                 ) : (
                   <div style={{ display: 'flex', width: '32px', height: '32px', borderRadius: getAvatarBorderRadius(user.avatar_shape), alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', color: '#fff', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                    {user.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+                    {(user.name || 'User').split(' ').filter(Boolean).map(n=>n[0]).join('').substring(0,2).toUpperCase()}
                   </div>
                 )}
                 <span style={{ fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-main)' }}>
