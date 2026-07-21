@@ -219,7 +219,7 @@ export default function App() {
     mode: 'hybrid',
     delaySeconds: 15,
     defaultGreeting: '',
-    adminPhoneNumber: '+15550192',
+    adminPhoneNumber: '',
     whatsappPhoneId: '',
     whatsappToken: '',
     webhookVerifyToken: 'educonnect_verify_token_123'
@@ -227,7 +227,7 @@ export default function App() {
   const [waChats, setWaChats] = useState([]);
   const [waReplyPhone, setWaReplyPhone] = useState('');
   const [waReplyMsg, setWaReplyMsg] = useState('');
-  const [simPhone, setSimPhone] = useState('+1 555-0192');
+  const [simPhone, setSimPhone] = useState('+919876543210');
   const [simMsg, setSimMsg] = useState('Hi, how do referral commissions work?');
   const [isSimulatingWa, setIsSimulatingWa] = useState(false);
 
@@ -236,7 +236,11 @@ export default function App() {
       const res = await fetch('/api/whatsapp/config');
       if (res.ok) {
         const data = await res.json();
-        setWaConfig(data);
+        setWaConfig(prev => ({
+          ...prev,
+          ...data,
+          adminPhoneNumber: data.adminPhoneNumber !== undefined ? data.adminPhoneNumber : prev.adminPhoneNumber
+        }));
       }
     } catch (e) {}
   };
@@ -3561,7 +3565,7 @@ export default function App() {
               rel="noreferrer"
               style={{ fontSize: '0.72rem', color: '#25D366', textDecoration: 'none', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
             >
-              📲 Speak Directly on WhatsApp ({waConfig.adminPhoneNumber || 'Admin'})
+              📲 Speak Directly on WhatsApp {waConfig.adminPhoneNumber ? `(${waConfig.adminPhoneNumber})` : '(Admin Support)'}
             </a>
           </div>
 

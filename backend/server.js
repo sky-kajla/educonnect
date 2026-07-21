@@ -1261,8 +1261,10 @@ app.get('/api/whatsapp/config', async (req, res) => {
       configMap[r.config_key] = r.config_value;
     });
 
+    const activePhone = configMap.admin_phone_number !== undefined ? configMap.admin_phone_number : (whatsappBot.botConfig.adminPhoneNumber || '');
+
     res.json({
-      adminPhoneNumber: configMap.admin_phone_number || whatsappBot.botConfig.adminPhoneNumber || '+919876543210',
+      adminPhoneNumber: activePhone,
       enabled: configMap.bot_enabled !== 'false',
       mode: configMap.bot_mode || whatsappBot.botConfig.mode || 'hybrid',
       delaySeconds: parseInt(configMap.delay_seconds || '15', 10),

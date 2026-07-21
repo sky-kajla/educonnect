@@ -15,7 +15,7 @@ let botConfig = {
   mode: 'hybrid', // 'instant' | 'hybrid' (delay fallback) | 'off'
   delaySeconds: 15,
   defaultGreeting: "Hello! Thanks for reaching out to EduConnect. Our team will be right with you. In the meantime, I'm EduBot, your assistant!",
-  adminPhoneNumber: process.env.ADMIN_PHONE_NUMBER || '+15550192',
+  adminPhoneNumber: process.env.ADMIN_PHONE_NUMBER || '',
   whatsappPhoneId: process.env.WHATSAPP_PHONE_ID || '',
   whatsappToken: process.env.WHATSAPP_TOKEN || '',
   webhookVerifyToken: process.env.WHATSAPP_VERIFY_TOKEN || 'educonnect_verify_token_123'
