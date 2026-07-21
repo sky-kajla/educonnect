@@ -82,6 +82,12 @@ export default function App() {
   const [isDraggingChat, setIsDraggingChat] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [hasMovedChat, setHasMovedChat] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([
+    { sender: 'bot', text: '👋 Welcome to EduConnect! Ask me anything about admissions, courses, virtual classes, or password resets.' }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatTyping, setIsChatTyping] = useState(false);
 
   const handleChatMouseDown = (e) => {
     setIsDraggingChat(true);
@@ -206,14 +212,6 @@ export default function App() {
   const [showAvatarLightbox, setShowAvatarLightbox] = useState(false);
   const [profileCurrentPassword, setProfileCurrentPassword] = useState('');
   const [profileNewPassword, setProfileNewPassword] = useState('');
-
-  // On-Site Chatbot Widget state
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState([
-    { sender: 'bot', text: '👋 Welcome to EduConnect! Ask me anything about admissions, courses, virtual classes, or password resets.' }
-  ]);
-  const [chatInput, setChatInput] = useState('');
-  const [isChatTyping, setIsChatTyping] = useState(false);
 
   // WhatsApp Admin Control Console state
   const [waConfig, setWaConfig] = useState({
