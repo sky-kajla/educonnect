@@ -3147,7 +3147,7 @@ export default function App() {
     <div className="app-layout">
       {/* SaaS Sidebar Navigation */}
       <aside className="sidebar">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '12px', marginBottom: '0.75rem' }}>
           <div className="sidebar-logo" style={{ cursor: 'pointer' }} onClick={() => setCurrentTab('home')}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
@@ -3155,7 +3155,7 @@ export default function App() {
             <span>EduConnect</span>
           </div>
 
-          {/* Perfectly Centered Three-Dot Master Menu Button */}
+          {/* Three-Dot Master Menu Button Grouped Next to EduConnect */}
           <button 
             type="button" 
             title="All Navigation Features (Master Menu)"
@@ -3175,7 +3175,8 @@ export default function App() {
               lineHeight: 1,
               padding: 0,
               boxShadow: '0 0 10px rgba(99, 102, 241, 0.25)',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              flexShrink: 0
             }}
             onClick={() => setShowMasterNavModal(true)}
           >
