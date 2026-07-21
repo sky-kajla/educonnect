@@ -3159,32 +3159,14 @@ export default function App() {
             {/* Three-Dot Master Menu Button Grouped Immediately Next to EduConnect */}
             <button 
               type="button" 
+              className="three-dot-menu-btn"
               title="All Navigation Features (Master Menu)"
-              style={{ 
-                background: 'rgba(99, 102, 241, 0.15)', 
-                border: '1px solid rgba(99, 102, 241, 0.4)', 
-                color: 'var(--primary)', 
-                borderRadius: '8px', 
-                width: '28px', 
-                height: '28px', 
-                display: 'inline-flex',
-                alignItems: 'center',
-                justify: 'center',
-                cursor: 'pointer', 
-                fontSize: '1.15rem', 
-                fontWeight: 'bold',
-                lineHeight: 1,
-                padding: 0,
-                boxShadow: '0 0 10px rgba(99, 102, 241, 0.25)',
-                transition: 'all 0.2s ease',
-                flexShrink: 0
-              }}
               onClick={(e) => {
                 e.stopPropagation();
                 setShowMasterNavModal(true);
               }}
             >
-              <span style={{ display: 'block', lineHeight: 1, marginTop: '-2px' }}>⋮</span>
+              ⋮
             </button>
           </div>
         </div>

@@ -927,3 +927,40 @@ tr:hover td {
   box-shadow: 0 0 25px rgba(239, 68, 68, 1), 0 0 10px #ffffff;
   transform: scale(0.92);
 }
+
+/* Glowing Three-Dot Master Menu Button */
+.three-dot-menu-btn {
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.25rem;
+  font-weight: bold;
+  line-height: 1;
+  padding: 0;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  outline: none;
+}
+
+.three-dot-menu-btn:hover {
+  background: rgba(56, 189, 248, 0.3);
+  border-color: #38bdf8;
+  color: #ffffff;
+  box-shadow: 0 0 22px #38bdf8, 0 0 40px rgba(56, 189, 248, 0.5);
+  transform: scale(1.12);
+}
+
+.three-dot-menu-btn:active {
+  background: #38bdf8;
+  color: #0b0f19;
+  box-shadow: 0 0 30px #38bdf8, 0 0 60px rgba(56, 189, 248, 0.9);
+  transform: scale(0.92);
+}
