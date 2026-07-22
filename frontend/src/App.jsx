@@ -162,6 +162,11 @@ export default function App() {
   // Referral Modal state
   const [showReferModal, setShowReferModal] = useState(false);
   const [referStudentName, setReferStudentName] = useState('');
+  const [referStudentEmail, setReferStudentEmail] = useState('');
+  const [referStudentPhone, setReferStudentPhone] = useState('');
+  const [referStudentAddress, setReferStudentAddress] = useState('');
+  const [referStudentAge, setReferStudentAge] = useState('');
+  const [referStudentGender, setReferStudentGender] = useState('');
   const [referCollegeId, setReferCollegeId] = useState('');
   const [referCourseId, setReferCourseId] = useState('');
   
@@ -1113,12 +1118,25 @@ export default function App() {
       const res = await fetch('/api/admissions', {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ student_name: referStudentName, course_id: parseInt(referCourseId) })
+        body: JSON.stringify({ 
+          student_name: referStudentName, 
+          student_email: referStudentEmail,
+          student_phone: referStudentPhone,
+          student_address: referStudentAddress,
+          student_age: referStudentAge ? parseInt(referStudentAge) : null,
+          student_gender: referStudentGender,
+          course_id: parseInt(referCourseId) 
+        })
       });
       if (res.ok) {
         showToast('Referral submitted successfully.');
         setShowReferModal(false);
         setReferStudentName('');
+        setReferStudentEmail('');
+        setReferStudentPhone('');
+        setReferStudentAddress('');
+        setReferStudentAge('');
+        setReferStudentGender('');
         setReferCollegeId('');
         setReferCourseId('');
         fetchAdmissions();
@@ -1939,7 +1957,22 @@ export default function App() {
                 const college = colleges.find(c => (c.courses || []).some(crs => crs.course_id === adm.course_id));
                 return (
                   <tr key={adm.admission_id}>
-                    <td style={{ fontWeight: '600' }}>{adm.student_name}</td>
+                    <td>
+                      <div style={{ fontWeight: '600' }}>{adm.student_name}</div>
+                      {(adm.student_email || adm.student_phone) && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                          {adm.student_email && <span>📧 {adm.student_email} </span>}
+                          {adm.student_phone && <span>📞 {adm.student_phone}</span>}
+                        </div>
+                      )}
+                      {(adm.student_age || adm.student_gender || adm.student_address) && (
+                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.15rem' }}>
+                          {adm.student_age && <span>Age: {adm.student_age} | </span>}
+                          {adm.student_gender && <span>Gender: {adm.student_gender} | </span>}
+                          {adm.student_address && <span>📍 {adm.student_address}</span>}
+                        </div>
+                      )}
+                    </td>
                     <td>
                       <div>{course ? course.course_name : 'Loading Course...'}</div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{college ? college.college_name : 'Loading...'}</div>
@@ -2885,7 +2918,22 @@ export default function App() {
                       const college = colleges.find(c => (c.courses || []).some(crs => crs.course_id === adm.course_id));
                       return (
                         <tr key={adm.admission_id}>
-                          <td style={{ fontWeight: '600' }}>{adm.student_name}</td>
+                          <td>
+                            <div style={{ fontWeight: '600' }}>{adm.student_name}</div>
+                            {(adm.student_email || adm.student_phone) && (
+                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                                {adm.student_email && <span>📧 {adm.student_email} </span>}
+                                {adm.student_phone && <span>📞 {adm.student_phone}</span>}
+                              </div>
+                            )}
+                            {(adm.student_age || adm.student_gender || adm.student_address) && (
+                              <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.15rem' }}>
+                                {adm.student_age && <span>Age: {adm.student_age} | </span>}
+                                {adm.student_gender && <span>Gender: {adm.student_gender} | </span>}
+                                {adm.student_address && <span>📍 {adm.student_address}</span>}
+                              </div>
+                            )}
+                          </td>
                           <td>
                             <div>{course ? course.course_name : 'Loading...'}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{college ? college.college_name : ''}</div>
@@ -4281,11 +4329,40 @@ export default function App() {
             <h3 style={{ fontSize: '1.4rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>Submit Student Admission</h3>
             <form onSubmit={handleReferralSubmit}>
               <div className="form-group">
-                <label>Student Full Name</label>
+                <label>Student Full Name *</label>
                 <input type="text" className="form-control" value={referStudentName} onChange={(e) => setReferStudentName(e.target.value)} placeholder="e.g. Emily Watson" required />
               </div>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label>Email Address *</label>
+                  <input type="email" className="form-control" value={referStudentEmail} onChange={(e) => setReferStudentEmail(e.target.value)} placeholder="student@example.com" required />
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label>Mobile Number *</label>
+                  <input type="tel" className="form-control" value={referStudentPhone} onChange={(e) => setReferStudentPhone(e.target.value)} placeholder="e.g. +1 555-0199" required />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label>Age</label>
+                  <input type="number" className="form-control" value={referStudentAge} onChange={(e) => setReferStudentAge(e.target.value)} placeholder="e.g. 21" min="1" max="120" />
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label>Gender</label>
+                  <select className="form-control" value={referStudentGender} onChange={(e) => setReferStudentGender(e.target.value)}>
+                    <option value="">Choose Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
               <div className="form-group">
-                <label>Program Selection</label>
+                <label>Billing & Contact Address</label>
+                <textarea className="form-control" value={referStudentAddress} onChange={(e) => setReferStudentAddress(e.target.value)} placeholder="e.g. 742 Evergreen Terrace, Springfield" rows="2" style={{ resize: 'vertical' }} />
+              </div>
+              <div className="form-group">
+                <label>Program Selection *</label>
                 <select className="form-control" value={referCourseId} onChange={(e) => setReferCourseId(e.target.value)} required>
                   <option value="">-- Choose Program --</option>
                   {colleges.map(c => (

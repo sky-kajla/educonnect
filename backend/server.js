@@ -485,17 +485,40 @@ app.post('/api/courses', authenticateToken, requireAdmin, async (req, res) => {
 // Admissions (Referrals) Routes
 // ----------------------------------------------------
 app.post('/api/admissions', authenticateToken, async (req, res) => {
-  const { student_name, course_id } = req.body;
+  const { student_name, student_email, student_phone, student_address, student_age, student_gender, course_id } = req.body;
   if (!student_name || !course_id) {
     return res.status(400).json({ error: 'Student name and course selection are required' });
   }
 
   try {
     const result = await db.run(
-      "INSERT INTO Admissions (student_name, course_id, referrer_id, status) VALUES (?, ?, ?, 'Pending')",
-      [student_name, course_id, req.user.user_id]
+      `INSERT INTO Admissions (
+        student_name, student_email, student_phone, student_address, student_age, student_gender, 
+        course_id, referrer_id, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending')`,
+      [
+        student_name, 
+        student_email || '', 
+        student_phone || '', 
+        student_address || '', 
+        student_age ? parseInt(student_age) : null, 
+        student_gender || '', 
+        course_id, 
+        req.user.user_id
+      ]
     );
-    res.status(201).json({ admission_id: result.lastID, student_name, course_id, referrer_id: req.user.user_id, status: 'Pending' });
+    res.status(201).json({ 
+      admission_id: result.lastID, 
+      student_name, 
+      student_email,
+      student_phone,
+      student_address,
+      student_age,
+      student_gender,
+      course_id, 
+      referrer_id: req.user.user_id, 
+      status: 'Pending' 
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -505,9 +528,21 @@ app.get('/api/admissions', authenticateToken, async (req, res) => {
   try {
     let admissions;
     if (req.user.role === 'admin') {
-      admissions = await db.all("SELECT * FROM Admissions");
+      admissions = await db.all(
+        `SELECT a.*, u.name as referrer_name 
+         FROM Admissions a 
+         LEFT JOIN Users u ON a.referrer_id = u.user_id 
+         ORDER BY a.admission_id DESC`
+      );
     } else {
-      admissions = await db.all("SELECT * FROM Admissions WHERE referrer_id = ?", [req.user.user_id]);
+      admissions = await db.all(
+        `SELECT a.*, u.name as referrer_name 
+         FROM Admissions a 
+         LEFT JOIN Users u ON a.referrer_id = u.user_id 
+         WHERE a.referrer_id = ? 
+         ORDER BY a.admission_id DESC`,
+        [req.user.user_id]
+      );
     }
     res.json(admissions);
   } catch (err) {
