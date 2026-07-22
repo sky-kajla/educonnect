@@ -1947,7 +1947,7 @@ export default function App() {
                       <span className={`status-badge ${adm.status.toLowerCase()}`}>{adm.status}</span>
                     </td>
                     <td style={{ fontWeight: '600', color: adm.status === 'Approved' ? 'var(--success)' : 'var(--text-muted)' }}>
-                      ${course ? course.commission.toFixed(2) : '0.00'}
+                      ${(course && course.commission != null) ? parseFloat(course.commission).toFixed(2) : '0.00'}
                     </td>
                   </tr>
                 );
@@ -2032,7 +2032,7 @@ export default function App() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '0.4rem 0.65rem', borderRadius: '8px' }}>
                 <span style={{ color: '#ffb703', fontWeight: 'bold', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                  ⭐ {t.avg_rating ? t.avg_rating.toFixed(1) : '5.0'}
+                  ⭐ {t.avg_rating != null ? parseFloat(t.avg_rating).toFixed(1) : '5.0'}
                 </span>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                   ({t.review_count || 0} reviews)
@@ -2052,7 +2052,7 @@ export default function App() {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <span style={{ fontSize: '0.75rem', color: 'var(--accent)', textTransform: 'uppercase', fontWeight: '600' }}>Dev Course</span>
-                  <span style={{ fontSize: '1.2rem', fontWeight: '800' }}>${course.price.toFixed(2)}</span>
+                  <span style={{ fontSize: '1.2rem', fontWeight: '800' }}>${(course.price != null ? parseFloat(course.price).toFixed(2) : '0.00')}</span>
                 </div>
                 <h3 className="card-title" style={{ marginTop: '0.75rem', fontSize: '1.15rem' }}>{course.title}</h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.5rem' }}>{course.description}</p>
@@ -2066,7 +2066,7 @@ export default function App() {
                     style={{ padding: '0.15rem 0.5rem', fontSize: '0.75rem', color: '#ffb703', borderColor: 'rgba(255, 183, 3, 0.3)', background: 'rgba(255, 183, 3, 0.05)' }}
                     onClick={() => openTeacherReviewsModal(course.teacher_id, course.teacher_name)}
                   >
-                    ⭐ {course.avg_rating ? parseFloat(course.avg_rating).toFixed(1) : '5.0'} ({course.review_count || 0})
+                    ⭐ {course.avg_rating != null ? parseFloat(course.avg_rating).toFixed(1) : '5.0'} ({course.review_count || 0})
                   </button>
                 </div>
               </div>
@@ -2199,7 +2199,7 @@ export default function App() {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                 <span className="status-badge live" style={{ background: note.price === 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(56, 189, 248, 0.2)', color: note.price === 0 ? '#10b981' : '#38bdf8', borderColor: note.price === 0 ? '#10b981' : '#38bdf8', fontWeight: 'bold' }}>
-                  {note.price === 0 ? '🎁 FREE HANDOUT' : `💰 $${note.price.toFixed(2)} USD`}
+                  {note.price === 0 ? '🎁 FREE HANDOUT' : `💰 $${(note.price != null ? parseFloat(note.price).toFixed(2) : '0.00')} USD`}
                 </span>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>👨‍🏫 {note.teacher_name}</span>
               </div>
@@ -2226,7 +2226,7 @@ export default function App() {
                 </div>
               ) : (
                 <button className="btn btn-primary" style={{ width: '100%', fontWeight: 'bold' }} onClick={() => handleBuyNote(note.note_id)}>
-                  💳 Unlock Notes for ${note.price.toFixed(2)}
+                  💳 Unlock Notes for ${(note.price != null ? parseFloat(note.price).toFixed(2) : '0.00')}
                 </button>
               )}
             </div>
@@ -2829,11 +2829,11 @@ export default function App() {
                 </div>
                 <div className="stat-card">
                   <span className="stat-label">Course Purchases</span>
-                  <div className="stat-value">${adminStats.totalCourseSales.toFixed(2)}</div>
+                  <div className="stat-value">${(adminStats.totalCourseSales != null ? parseFloat(adminStats.totalCourseSales).toFixed(2) : '0.00')}</div>
                 </div>
                 <div className="stat-card">
                   <span className="stat-label">Commissions Paid</span>
-                  <div className="stat-value" style={{ color: 'var(--success)' }}>${adminStats.totalCommissionPaid.toFixed(2)}</div>
+                  <div className="stat-value" style={{ color: 'var(--success)' }}>${(adminStats.totalCommissionPaid != null ? parseFloat(adminStats.totalCommissionPaid).toFixed(2) : '0.00')}</div>
                 </div>
               </div>
             )}
@@ -2891,7 +2891,7 @@ export default function App() {
                           </td>
                           <td>{adm.referrer_name || ' Sarah Jenkins'}</td>
                           <td style={{ fontWeight: '600', color: 'var(--success)' }}>
-                            ${course ? course.commission.toFixed(2) : '0.00'}
+                            ${(course && course.commission != null) ? parseFloat(course.commission).toFixed(2) : '0.00'}
                           </td>
                           <td>
                             {adm.status === 'Pending' ? (
@@ -2962,7 +2962,7 @@ export default function App() {
                             </span>
                           </td>
                           <td style={{ fontWeight: '600', color: 'var(--success)' }}>
-                            ${u.wallet_balance.toFixed(2)}
+                            ${(u.wallet_balance != null ? parseFloat(u.wallet_balance).toFixed(2) : '0.00')}
                           </td>
                           <td>
                             {hasBank ? (
@@ -3757,7 +3757,7 @@ export default function App() {
                   {user.role === 'admin' && <td style={{ fontWeight: '600' }}>{p.user_email || 'admin@educonnect.com'}</td>}
                   <td>{p.type}</td>
                   <td style={{ color: p.amount >= 0 ? 'var(--success)' : 'var(--danger)', fontWeight: '600' }}>
-                    {p.amount >= 0 ? '+' : ''}${p.amount.toFixed(2)}
+                    {p.amount >= 0 ? '+' : ''}${(p.amount != null ? parseFloat(p.amount).toFixed(2) : '0.00')}
                   </td>
                   <td>{p.date}</td>
                 </tr>
@@ -3962,7 +3962,7 @@ export default function App() {
         <div className="stats-grid" style={{ marginTop: '2rem' }}>
           <div className="card">
             <div style={{ color: 'var(--primary)', fontWeight: '600', fontSize: '0.75rem', textTransform: 'uppercase' }}>Wallet Cash Balance</div>
-            <h3 style={{ fontSize: '2rem', margin: '0.5rem 0', color: 'var(--success)' }}>${user.wallet_balance.toFixed(2)}</h3>
+            <h3 style={{ fontSize: '2rem', margin: '0.5rem 0', color: 'var(--success)' }}>${(user.wallet_balance != null ? parseFloat(user.wallet_balance).toFixed(2) : '0.00')}</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Mock currency for course sales, purchases, and admissions referrals.</p>
           </div>
           
@@ -4214,7 +4214,7 @@ export default function App() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-glass)', padding: '0.4rem 1rem', borderRadius: '8px' }}>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Wallet Balance:</span>
-                <strong style={{ color: 'var(--success)' }}>${(user.wallet_balance || 0).toFixed(2)}</strong>
+                <strong style={{ color: 'var(--success)' }}>${(user.wallet_balance != null ? parseFloat(user.wallet_balance).toFixed(2) : '0.00')}</strong>
               </div>
               <button className="btn btn-secondary" style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', background: 'rgba(16, 185, 129, 0.1)', borderColor: 'var(--success)', color: 'var(--success)' }} onClick={() => {
                 const addAmount = 1000;
@@ -4223,7 +4223,7 @@ export default function App() {
                   headers: getAuthHeaders(),
                   body: JSON.stringify({ amount: addAmount })
                 }).then(() => {
-                  showToast(`Credit Loaded: +$${addAmount.toFixed(2)}`);
+                  showToast(`Credit Loaded: +$${(addAmount != null ? parseFloat(addAmount).toFixed(2) : '0.00')}`);
                   fetchUserProfile();
                 });
               }}>
@@ -4281,7 +4281,7 @@ export default function App() {
                   {colleges.map(c => (
                     <optgroup key={c.college_id} label={c.college_name}>
                       {c.courses && c.courses.map(crs => (
-                        <option key={crs.course_id} value={crs.course_id}>{crs.course_name} (Comm: ${crs.commission.toFixed(2)})</option>
+                        <option key={crs.course_id} value={crs.course_id}>{crs.course_name} (Comm: ${(crs.commission != null ? parseFloat(crs.commission).toFixed(2) : '0.00')})</option>
                       ))}
                     </optgroup>
                   ))}
