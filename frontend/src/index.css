@@ -975,3 +975,11 @@ tr:hover td {
   text-shadow: 0 0 18px #38bdf8, 0 0 28px #ffffff, 0 0 40px #38bdf8;
   transform: scale(0.94);
 }
+
+/* College Program Card Hover Effects */
+.college-program-card:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.08);
+  transform: translateY(-4px);
+}

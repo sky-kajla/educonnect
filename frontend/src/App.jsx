@@ -213,6 +213,10 @@ export default function App() {
   const [profileCurrentPassword, setProfileCurrentPassword] = useState('');
   const [profileNewPassword, setProfileNewPassword] = useState('');
 
+  // Colleges Search & Filter states
+  const [collegeSearch, setCollegeSearch] = useState('');
+  const [collegeFilterLocation, setCollegeFilterLocation] = useState('');
+
   // WhatsApp Admin Control Console state
   const [waConfig, setWaConfig] = useState({
     enabled: true,
@@ -1496,51 +1500,280 @@ export default function App() {
     </div>
   );
 
-  const renderColleges = () => (
-    <div>
-      <div className="section-header">
-        <div className="section-title-wrap">
-          <h2>Partner Colleges Directory</h2>
-          <p>Submit student admission referrals to earn high-paying commission cash rewards.</p>
-        </div>
-      </div>
-      
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', marginTop: '1.5rem' }}>
-        {colleges.map(col => (
-          <div key={col.college_id} className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '1rem', marginBottom: '1rem' }}>
-              <div>
-                <h3 style={{ fontSize: '1.4rem' }}>{col.college_name}</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.2rem' }}>📍 {col.location}</p>
-              </div>
-              <div style={{ textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right' }}>
-                Contact: <strong style={{ textTransform: 'none', display: 'block', color: 'var(--text-main)' }}>{col.contact}</strong>
-              </div>
-            </div>
+  const renderColleges = () => {
+    const filteredColleges = colleges.filter(col => {
+      const matchesSearch = col.college_name.toLowerCase().includes(collegeSearch.toLowerCase()) ||
+                            col.location.toLowerCase().includes(collegeSearch.toLowerCase()) ||
+                            (col.courses && col.courses.some(c => c.course_name.toLowerCase().includes(collegeSearch.toLowerCase())));
+      const matchesLocation = !collegeFilterLocation || col.location.toLowerCase().includes(collegeFilterLocation.toLowerCase());
+      return matchesSearch && matchesLocation;
+    });
 
-            <h4 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Referral Programs</h4>
-            <div className="grid-container" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', marginTop: '0' }}>
-              {col.courses && col.courses.map(course => (
-                <div key={course.course_id} style={{ background: 'rgba(255,255,255,0.015)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
-                  <div>
-                    <h5 style={{ fontSize: '1rem' }}>{course.course_name}</h5>
-                    <div style={{ color: 'var(--success)', fontWeight: '600', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-                      Earn ${course.commission.toFixed(2)}
+    const uniqueLocations = Array.from(new Set(colleges.map(c => {
+      const parts = c.location.split(',');
+      return parts[parts.length - 1].trim();
+    }).filter(Boolean)));
+
+    const getGradientForCollege = (name) => {
+      const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const colors = [
+        'linear-gradient(135deg, #6366f1, #a855f7)', // Indigo/Purple
+        'linear-gradient(135deg, #06b6d4, #3b82f6)', // Cyan/Blue
+        'linear-gradient(135deg, #10b981, #059669)', // Emerald/Green
+        'linear-gradient(135deg, #f59e0b, #e11d48)', // Amber/Rose
+        'linear-gradient(135deg, #ec4899, #8b5cf6)', // Pink/Violet
+      ];
+      return colors[hash % colors.length];
+    };
+
+    return (
+      <div>
+        {/* Sleek Hero Header Banner */}
+        <div style={{
+          position: 'relative',
+          padding: '2.5rem 2rem',
+          borderRadius: '16px',
+          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.05))',
+          border: '1px solid rgba(99, 102, 241, 0.2)',
+          marginBottom: '2rem',
+          overflow: 'hidden'
+        }}>
+          <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', borderRadius: '50%', background: 'var(--primary-glow)', filter: 'blur(80px)', opacity: 0.5, pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', bottom: '-50px', left: '-50px', width: '150px', height: '150px', borderRadius: '50%', background: 'var(--secondary-glow)', filter: 'blur(80px)', opacity: 0.3, pointerEvents: 'none' }} />
+          
+          <h1 style={{ fontSize: '2rem', fontWeight: '800', margin: 0, color: '#fff', letterSpacing: '-0.02em' }}>
+            Partner Colleges & Referral Directory
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '0.5rem', maxWidth: '650px', lineHeight: '1.6' }}>
+            Refer aspiring students to our fully accredited global partner universities. Earn high-ticket commission bonuses credited directly to your digital wallet upon verified student enrollment.
+          </p>
+        </div>
+
+        {/* Search & Filter Toolbar */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem',
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid var(--border-glass)',
+          borderRadius: '16px',
+          padding: '1.25rem',
+          marginBottom: '2rem',
+          backdropFilter: 'blur(10px)'
+        }}>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: '280px', position: 'relative' }}>
+              <input 
+                type="text" 
+                className="form-control"
+                placeholder="Search colleges, courses, or locations..." 
+                value={collegeSearch}
+                onChange={(e) => setCollegeSearch(e.target.value)}
+                style={{ paddingLeft: '2.5rem', height: '46px', fontSize: '0.9rem' }}
+              />
+              <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>🔍</span>
+            </div>
+            <select
+              className="form-control"
+              value={collegeFilterLocation}
+              onChange={(e) => setCollegeFilterLocation(e.target.value)}
+              style={{ width: '200px', height: '46px', fontSize: '0.9rem' }}
+            >
+              <option value="">🌎 All Locations</option>
+              {uniqueLocations.map(loc => (
+                <option key={loc} value={loc}>{loc}</option>
+              ))}
+            </select>
+            {(collegeSearch || collegeFilterLocation) && (
+              <button 
+                className="btn btn-secondary" 
+                style={{ height: '46px', padding: '0 1rem' }} 
+                onClick={() => { setCollegeSearch(''); setCollegeFilterLocation(''); }}
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Directory Grid */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+          {filteredColleges.map(col => {
+            const initialBadge = col.college_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            const collegeColorGradient = getGradientForCollege(col.college_name);
+
+            return (
+              <div 
+                key={col.college_id} 
+                className="card" 
+                style={{ 
+                  padding: 0, 
+                  overflow: 'hidden', 
+                  background: 'rgba(15, 23, 42, 0.4)', 
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                  borderRadius: '20px'
+                }}
+              >
+                {/* Hero Header Banner */}
+                <div style={{ 
+                  height: '110px', 
+                  background: collegeColorGradient, 
+                  position: 'relative', 
+                  display: 'flex', 
+                  alignItems: 'flex-end',
+                  padding: '1rem 1.5rem'
+                }}>
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' }} />
+                  
+                  {/* Floating Contact Badge */}
+                  <a 
+                    href={`mailto:${col.contact}`}
+                    style={{ 
+                      position: 'absolute', 
+                      top: '1rem', 
+                      right: '1.5rem', 
+                      background: 'rgba(255,255,255,0.15)', 
+                      backdropFilter: 'blur(8px)',
+                      border: '1px solid rgba(255,255,255,0.25)',
+                      color: '#fff',
+                      fontSize: '0.75rem',
+                      fontWeight: '700',
+                      padding: '0.4rem 0.8rem',
+                      borderRadius: '50px',
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+                  >
+                    ✉️ {col.contact}
+                  </a>
+                </div>
+
+                {/* Info Section with Floating Logo Badge */}
+                <div style={{ 
+                  padding: '0 1.5rem 1.5rem 1.5rem',
+                  position: 'relative',
+                  marginTop: '-30px',
+                  zIndex: 2
+                }}>
+                  <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
+                    {/* Circle Emblem Badge */}
+                    <div style={{ 
+                      width: '76px', 
+                      height: '76px', 
+                      borderRadius: '16px', 
+                      background: collegeColorGradient, 
+                      border: '4px solid #0b0f19',
+                      boxShadow: '0 12px 24px rgba(0,0,0,0.4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontSize: '1.6rem',
+                      fontWeight: '800',
+                      flexShrink: 0
+                    }}>
+                      {initialBadge}
+                    </div>
+
+                    <div>
+                      <h3 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0, color: '#fff' }}>{col.college_name}</h3>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <span>📍</span> {col.location}
+                      </p>
                     </div>
                   </div>
-                  {(!user || user.role === 'student') && (
-                    <button className="btn btn-accent" style={{ padding: '0.4rem 0.8rem', width: '100%', marginTop: '1rem', fontSize: '0.8rem' }} onClick={() => triggerReferralModal(col.college_id, course.course_id)}>
-                      Refer Student
-                    </button>
-                  )}
+
+                  {/* Course Cards grid */}
+                  <h4 style={{ 
+                    fontSize: '0.8rem', 
+                    color: 'var(--text-muted)', 
+                    marginBottom: '1rem', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '0.08em', 
+                    fontWeight: '700',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    paddingBottom: '0.5rem'
+                  }}>
+                    Available Referral Programs
+                  </h4>
+
+                  <div className="grid-container" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', marginTop: '0', gap: '1.25rem' }}>
+                    {col.courses && col.courses.map(course => (
+                      <div 
+                        key={course.course_id} 
+                        className="college-program-card"
+                        style={{ 
+                          background: 'rgba(255,255,255,0.02)', 
+                          padding: '1.25rem', 
+                          borderRadius: '14px', 
+                          border: '1px solid rgba(255,255,255,0.04)', 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          justifyContent: 'space-between', 
+                          minHeight: '150px',
+                          transition: 'all 0.25s ease'
+                        }}
+                      >
+                        <div>
+                          <h5 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0, color: '#fff' }}>{course.course_name}</h5>
+                          <span style={{ 
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            gap: '0.3rem', 
+                            color: '#10b981', 
+                            background: 'rgba(16, 185, 129, 0.1)', 
+                            border: '1px solid rgba(16, 185, 129, 0.2)', 
+                            padding: '0.25rem 0.65rem', 
+                            borderRadius: '50px', 
+                            fontSize: '0.8rem', 
+                            fontWeight: '700',
+                            marginTop: '0.5rem'
+                          }}>
+                            💰 Earn ${course.commission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+
+                        {(!user || user.role === 'student') && (
+                          <button 
+                            className="btn btn-accent" 
+                            style={{ 
+                              padding: '0.55rem 1rem', 
+                              width: '100%', 
+                              marginTop: '1.25rem', 
+                              fontSize: '0.85rem', 
+                              fontWeight: '700',
+                              boxShadow: '0 4px 12px rgba(56, 189, 248, 0.15)'
+                            }} 
+                            onClick={() => triggerReferralModal(col.college_id, course.course_id)}
+                          >
+                            Refer Student 🤝
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              </div>
+            );
+          })}
+
+          {filteredColleges.length === 0 && (
+            <div className="card" style={{ padding: '4rem 2rem', textAlign: 'center', background: 'rgba(255,255,255,0.01)', border: '1px dashed var(--border-glass)' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🔍</div>
+              <h3 style={{ color: '#fff', marginBottom: '0.25rem' }}>No Colleges Found</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>We couldn't find any partner colleges matching "{collegeSearch}". Try checking your spelling or selecting another filter.</p>
             </div>
-          </div>
-        ))}
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderAdmissions = () => (
     <div>
