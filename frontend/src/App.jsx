@@ -167,6 +167,8 @@ export default function App() {
   const [referStudentAddress, setReferStudentAddress] = useState('');
   const [referStudentAge, setReferStudentAge] = useState('');
   const [referStudentGender, setReferStudentGender] = useState('');
+  const [referStudentQualification, setReferStudentQualification] = useState('');
+  const [referStudentPercentage, setReferStudentPercentage] = useState('');
   const [referCollegeId, setReferCollegeId] = useState('');
   const [referCourseId, setReferCourseId] = useState('');
   
@@ -1125,6 +1127,8 @@ export default function App() {
           student_address: referStudentAddress,
           student_age: referStudentAge ? parseInt(referStudentAge) : null,
           student_gender: referStudentGender,
+          student_qualification: referStudentQualification,
+          student_percentage: referStudentPercentage,
           course_id: parseInt(referCourseId) 
         })
       });
@@ -1137,6 +1141,8 @@ export default function App() {
         setReferStudentAddress('');
         setReferStudentAge('');
         setReferStudentGender('');
+        setReferStudentQualification('');
+        setReferStudentPercentage('');
         setReferCollegeId('');
         setReferCourseId('');
         fetchAdmissions();
@@ -1965,10 +1971,12 @@ export default function App() {
                           {adm.student_phone && <span>📞 {adm.student_phone}</span>}
                         </div>
                       )}
-                      {(adm.student_age || adm.student_gender || adm.student_address) && (
+                      {(adm.student_age || adm.student_gender || adm.student_address || adm.student_qualification || adm.student_percentage) && (
                         <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.15rem' }}>
                           {adm.student_age && <span>Age: {adm.student_age} | </span>}
                           {adm.student_gender && <span>Gender: {adm.student_gender} | </span>}
+                          {adm.student_qualification && <span>Qual: {adm.student_qualification} | </span>}
+                          {adm.student_percentage && <span>Percentage: {adm.student_percentage} | </span>}
                           {adm.student_address && <span>📍 {adm.student_address}</span>}
                         </div>
                       )}
@@ -2926,10 +2934,12 @@ export default function App() {
                                 {adm.student_phone && <span>📞 {adm.student_phone}</span>}
                               </div>
                             )}
-                            {(adm.student_age || adm.student_gender || adm.student_address) && (
+                            {(adm.student_age || adm.student_gender || adm.student_address || adm.student_qualification || adm.student_percentage) && (
                               <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.15rem' }}>
                                 {adm.student_age && <span>Age: {adm.student_age} | </span>}
                                 {adm.student_gender && <span>Gender: {adm.student_gender} | </span>}
+                                {adm.student_qualification && <span>Qual: {adm.student_qualification} | </span>}
+                                {adm.student_percentage && <span>Percentage: {adm.student_percentage} | </span>}
                                 {adm.student_address && <span>📍 {adm.student_address}</span>}
                               </div>
                             )}
@@ -4355,6 +4365,16 @@ export default function App() {
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
                   </select>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label>Last Qualification</label>
+                  <input type="text" className="form-control" value={referStudentQualification} onChange={(e) => setReferStudentQualification(e.target.value)} placeholder="e.g. Higher Secondary, Bachelor's" />
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label>Last Education Percentage / CGPA</label>
+                  <input type="text" className="form-control" value={referStudentPercentage} onChange={(e) => setReferStudentPercentage(e.target.value)} placeholder="e.g. 85% or 8.5 CGPA" />
                 </div>
               </div>
               <div className="form-group">

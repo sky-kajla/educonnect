@@ -285,6 +285,8 @@ function createSqliteTables() {
       student_address TEXT NULL,
       student_age INTEGER NULL,
       student_gender TEXT NULL,
+      student_qualification TEXT NULL,
+      student_percentage TEXT NULL,
       course_id INTEGER,
       referrer_id INTEGER,
       status TEXT DEFAULT 'Pending',
@@ -430,6 +432,8 @@ async function createMysqlTables() {
       student_address TEXT NULL,
       student_age INT NULL,
       student_gender VARCHAR(50) NULL,
+      student_qualification VARCHAR(255) NULL,
+      student_percentage VARCHAR(50) NULL,
       course_id INT,
       referrer_id INT,
       status VARCHAR(50) DEFAULT 'Pending',
@@ -1067,6 +1071,8 @@ async function migrateColumns() {
       try { await mysqlPool.query("ALTER TABLE Admissions ADD COLUMN student_address TEXT NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE Admissions ADD COLUMN student_age INT NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE Admissions ADD COLUMN student_gender VARCHAR(50) NULL"); } catch (e) {}
+      try { await mysqlPool.query("ALTER TABLE Admissions ADD COLUMN student_qualification VARCHAR(255) NULL"); } catch (e) {}
+      try { await mysqlPool.query("ALTER TABLE Admissions ADD COLUMN student_percentage VARCHAR(50) NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE Colleges ADD COLUMN cover_image LONGTEXT NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE Colleges ADD COLUMN logo_image LONGTEXT NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE OnlineClasses ADD COLUMN thumbnail LONGTEXT NULL"); } catch (e) {}
@@ -1095,6 +1101,8 @@ async function migrateColumns() {
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Admissions ADD COLUMN student_address TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Admissions ADD COLUMN student_age INTEGER NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Admissions ADD COLUMN student_gender TEXT NULL", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Admissions ADD COLUMN student_qualification TEXT NULL", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Admissions ADD COLUMN student_percentage TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Colleges ADD COLUMN cover_image TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Colleges ADD COLUMN logo_image TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE OnlineClasses ADD COLUMN thumbnail TEXT NULL", () => resolve())); } catch (e) {}

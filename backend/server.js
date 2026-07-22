@@ -485,7 +485,7 @@ app.post('/api/courses', authenticateToken, requireAdmin, async (req, res) => {
 // Admissions (Referrals) Routes
 // ----------------------------------------------------
 app.post('/api/admissions', authenticateToken, async (req, res) => {
-  const { student_name, student_email, student_phone, student_address, student_age, student_gender, course_id } = req.body;
+  const { student_name, student_email, student_phone, student_address, student_age, student_gender, student_qualification, student_percentage, course_id } = req.body;
   if (!student_name || !course_id) {
     return res.status(400).json({ error: 'Student name and course selection are required' });
   }
@@ -493,9 +493,9 @@ app.post('/api/admissions', authenticateToken, async (req, res) => {
   try {
     const result = await db.run(
       `INSERT INTO Admissions (
-        student_name, student_email, student_phone, student_address, student_age, student_gender, 
+        student_name, student_email, student_phone, student_address, student_age, student_gender, student_qualification, student_percentage,
         course_id, referrer_id, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending')`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending')`,
       [
         student_name, 
         student_email || '', 
@@ -503,6 +503,8 @@ app.post('/api/admissions', authenticateToken, async (req, res) => {
         student_address || '', 
         student_age ? parseInt(student_age) : null, 
         student_gender || '', 
+        student_qualification || '',
+        student_percentage || '',
         course_id, 
         req.user.user_id
       ]
@@ -515,6 +517,8 @@ app.post('/api/admissions', authenticateToken, async (req, res) => {
       student_address,
       student_age,
       student_gender,
+      student_qualification,
+      student_percentage,
       course_id, 
       referrer_id: req.user.user_id, 
       status: 'Pending' 
