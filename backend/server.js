@@ -189,6 +189,10 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: 'Invalid email or password' });
     }
 
+    if (user.is_blocked) {
+      return res.status(403).json({ error: 'This account has been suspended/blocked due to suspicious activity. Please contact support.' });
+    }
+
     const token = jwt.sign({ user_id: user.user_id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
     res.json({
       token,
@@ -276,11 +280,14 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
     const user = await db.get(
       `SELECT 
         user_id, name, email, role, wallet_balance, mobile, address, age, gender, username, profile_pic, avatar_shape,
-        bank_name, bank_account_holder, bank_account_no, bank_ifsc_code 
+        bank_name, bank_account_holder, bank_account_no, bank_ifsc_code, is_blocked 
        FROM Users WHERE user_id = ?`, 
       [req.user.user_id]
     );
     if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.is_blocked) {
+      return res.status(403).json({ error: 'This account has been suspended/blocked.' });
+    }
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1395,7 +1402,7 @@ app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) =>
     const users = await db.all(
       `SELECT 
         user_id, name, email, role, wallet_balance, mobile, address, age, gender, username, profile_pic, avatar_shape,
-        bank_name, bank_account_holder, bank_account_no, bank_ifsc_code 
+        bank_name, bank_account_holder, bank_account_no, bank_ifsc_code, is_blocked 
        FROM Users ORDER BY user_id DESC`
     );
     res.json(users);
@@ -1407,22 +1414,26 @@ app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) =>
 // Update a user's details (Admin Only)
 app.put('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
   const userId = parseInt(req.params.id);
-  const { role, wallet_balance } = req.body;
+  const { role, is_blocked } = req.body;
 
-  if (!role || wallet_balance === undefined) {
-    return res.status(400).json({ error: 'Role and wallet balance are required' });
+  if (!role || is_blocked === undefined) {
+    return res.status(400).json({ error: 'Role and Blocked Status are required' });
   }
 
   try {
     const user = await db.get("SELECT * FROM Users WHERE user_id = ?", [userId]);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
+    if (userId === req.user.user_id && is_blocked) {
+      return res.status(400).json({ error: 'You cannot block your own administrator account!' });
+    }
+
     await db.run(
-      "UPDATE Users SET role = ?, wallet_balance = ? WHERE user_id = ?",
-      [role, parseFloat(wallet_balance), userId]
+      "UPDATE Users SET role = ?, is_blocked = ? WHERE user_id = ?",
+      [role, is_blocked ? 1 : 0, userId]
     );
 
-    res.json({ message: 'User updated successfully!' });
+    res.json({ message: 'User details updated successfully!' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

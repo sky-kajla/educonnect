@@ -157,6 +157,7 @@ export default function App() {
   const [selectedAdminUser, setSelectedAdminUser] = useState(null);
   const [editUserRole, setEditUserRole] = useState('');
   const [editUserWallet, setEditUserWallet] = useState('');
+  const [editUserBlocked, setEditUserBlocked] = useState(false);
 
   // Referral Modal state
   const [showReferModal, setShowReferModal] = useState(false);
@@ -1264,12 +1265,12 @@ export default function App() {
     }
   };
 
-  const handleUpdateUserAdmin = async (userId, role, balance) => {
+  const handleUpdateUserAdmin = async (userId, role, isBlocked) => {
     try {
       const res = await fetch(`/api/admin/users/${userId}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ role, wallet_balance: parseFloat(balance) })
+        body: JSON.stringify({ role, is_blocked: isBlocked ? 1 : 0 })
       });
       if (res.ok) {
         showToast("User details updated successfully!");
@@ -2950,7 +2951,12 @@ export default function App() {
                                 </div>
                               )}
                               <div>
-                                <div style={{ fontWeight: '600' }}>{u.name}</div>
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                  <span style={{ fontWeight: '600' }}>{u.name}</span>
+                                  {u.is_blocked === 1 && (
+                                    <span className="status-badge" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)', fontSize: '0.65rem', marginLeft: '0.5rem', fontWeight: 'bold', padding: '0.1rem 0.35rem' }}>Blocked 🚫</span>
+                                  )}
+                                </div>
                                 {u.username && <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>@{u.username}</div>}
                               </div>
                             </div>
@@ -2984,6 +2990,7 @@ export default function App() {
                                   setSelectedAdminUser(u);
                                   setEditUserRole(u.role);
                                   setEditUserWallet(u.wallet_balance);
+                                  setEditUserBlocked(u.is_blocked === 1);
                                 }}
                               >
                                 🔍 View Details
@@ -3103,8 +3110,11 @@ export default function App() {
                     </select>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.35rem' }}>Wallet Balance ($ USD)</label>
-                    <input type="number" step="0.01" className="form-control" value={editUserWallet} onChange={(e) => setEditUserWallet(e.target.value)} />
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.35rem' }}>Account Status</label>
+                    <select className="form-control" value={editUserBlocked ? 'blocked' : 'active'} onChange={(e) => setEditUserBlocked(e.target.value === 'blocked')}>
+                      <option value="active">✅ Active / Unblocked</option>
+                      <option value="blocked">🚫 Blocked / Suspended</option>
+                    </select>
                   </div>
                 </div>
 
@@ -3112,7 +3122,7 @@ export default function App() {
                   <button 
                     className="btn btn-primary" 
                     style={{ flex: 2, fontWeight: 'bold' }} 
-                    onClick={() => handleUpdateUserAdmin(selectedAdminUser.user_id, editUserRole, editUserWallet)}
+                    onClick={() => handleUpdateUserAdmin(selectedAdminUser.user_id, editUserRole, editUserBlocked)}
                   >
                     Save Changes 💾
                   </button>

@@ -259,7 +259,8 @@ function createSqliteTables() {
       bank_name TEXT NULL,
       bank_account_holder TEXT NULL,
       bank_account_no TEXT NULL,
-      bank_ifsc_code TEXT NULL
+      bank_ifsc_code TEXT NULL,
+      is_blocked INTEGER DEFAULT 0
     )`,
     `CREATE TABLE IF NOT EXISTS Colleges (
       college_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -398,7 +399,8 @@ async function createMysqlTables() {
       bank_name VARCHAR(255) NULL,
       bank_account_holder VARCHAR(255) NULL,
       bank_account_no VARCHAR(255) NULL,
-      bank_ifsc_code VARCHAR(255) NULL
+      bank_ifsc_code VARCHAR(255) NULL,
+      is_blocked INT DEFAULT 0
     )`,
     `CREATE TABLE IF NOT EXISTS Colleges (
       college_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -1049,6 +1051,7 @@ async function migrateColumns() {
       try { await mysqlPool.query("ALTER TABLE Users ADD COLUMN bank_account_holder VARCHAR(255) NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE Users ADD COLUMN bank_account_no VARCHAR(255) NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE Users ADD COLUMN bank_ifsc_code VARCHAR(255) NULL"); } catch (e) {}
+      try { await mysqlPool.query("ALTER TABLE Users ADD COLUMN is_blocked INT DEFAULT 0"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE Colleges ADD COLUMN cover_image LONGTEXT NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE Colleges ADD COLUMN logo_image LONGTEXT NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE OnlineClasses ADD COLUMN thumbnail LONGTEXT NULL"); } catch (e) {}
@@ -1071,6 +1074,7 @@ async function migrateColumns() {
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN bank_account_holder TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN bank_account_no TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN bank_ifsc_code TEXT NULL", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN is_blocked INTEGER DEFAULT 0", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Colleges ADD COLUMN cover_image TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Colleges ADD COLUMN logo_image TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE OnlineClasses ADD COLUMN thumbnail TEXT NULL", () => resolve())); } catch (e) {}
