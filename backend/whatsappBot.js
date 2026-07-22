@@ -69,7 +69,7 @@ function generateBotAnswer(userMessage) {
 
   if (botConfig.adminPhoneNumber) {
     const cleanNumber = botConfig.adminPhoneNumber.replace(/[^0-9]/g, '');
-    responseText += `\n\n💬 *Want to talk directly with me?* Click here to chat on WhatsApp: https://wa.me/${cleanNumber}`;
+    responseText += `\n\n💬 *Want to talk directly with me?* [Click here to chat on WhatsApp](https://wa.me/${cleanNumber})`;
   }
 
   return responseText;

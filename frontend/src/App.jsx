@@ -3565,7 +3565,7 @@ export default function App() {
               rel="noreferrer"
               style={{ fontSize: '0.72rem', color: '#25D366', textDecoration: 'none', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
             >
-              📲 Speak Directly on WhatsApp {waConfig.adminPhoneNumber ? `(${waConfig.adminPhoneNumber})` : '(Admin Support)'}
+              📲 Speak Directly on WhatsApp
             </a>
           </div>
 
