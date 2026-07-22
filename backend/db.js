@@ -261,7 +261,9 @@ function createSqliteTables() {
       college_id INTEGER PRIMARY KEY AUTOINCREMENT,
       college_name TEXT NOT NULL,
       location TEXT NOT NULL,
-      contact TEXT NOT NULL
+      contact TEXT NOT NULL,
+      cover_image TEXT NULL,
+      logo_image TEXT NULL
     )`,
     `CREATE TABLE IF NOT EXISTS Courses (
       course_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -394,7 +396,9 @@ async function createMysqlTables() {
       college_id INT PRIMARY KEY AUTO_INCREMENT,
       college_name VARCHAR(255) NOT NULL,
       location VARCHAR(255) NOT NULL,
-      contact VARCHAR(255) NOT NULL
+      contact VARCHAR(255) NOT NULL,
+      cover_image LONGTEXT NULL,
+      logo_image LONGTEXT NULL
     )`,
     `CREATE TABLE IF NOT EXISTS Courses (
       course_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -767,10 +771,27 @@ function runJson(sql, params) {
       college_id,
       college_name: params[0],
       location: params[1],
-      contact: params[2]
+      contact: params[2],
+      cover_image: params[3] || null,
+      logo_image: params[4] || null
     });
     jsonDb.save();
     return Promise.resolve({ lastID: college_id, changes: 1 });
+  }
+
+  if (sqlLower.startsWith('update colleges set')) {
+    const collegeId = params[params.length - 1];
+    const college = jsonDb.data.colleges.find(c => c.college_id === collegeId);
+    if (college) {
+      college.college_name = params[0];
+      college.location = params[1];
+      college.contact = params[2];
+      college.cover_image = params[3] || null;
+      college.logo_image = params[4] || null;
+      jsonDb.save();
+      return Promise.resolve({ changes: 1 });
+    }
+    return Promise.resolve({ changes: 0 });
   }
 
   if (sqlLower.startsWith('insert into courses')) {
@@ -1016,6 +1037,8 @@ async function migrateColumns() {
       try { await mysqlPool.query("ALTER TABLE Users ADD COLUMN username VARCHAR(255) NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE Users ADD COLUMN profile_pic LONGTEXT NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE Users ADD COLUMN avatar_shape VARCHAR(50) NULL"); } catch (e) {}
+      try { await mysqlPool.query("ALTER TABLE Colleges ADD COLUMN cover_image LONGTEXT NULL"); } catch (e) {}
+      try { await mysqlPool.query("ALTER TABLE Colleges ADD COLUMN logo_image LONGTEXT NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE OnlineClasses ADD COLUMN thumbnail LONGTEXT NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE OnlineClasses ADD COLUMN lecture_type VARCHAR(50) DEFAULT 'video'"); } catch (e) {}
       try { await mysqlPool.query("CREATE TABLE IF NOT EXISTS StudyNotes (note_id INT PRIMARY KEY AUTO_INCREMENT, teacher_id INT NOT NULL, course_id INT NOT NULL, title VARCHAR(255) NOT NULL, description TEXT, price DOUBLE DEFAULT 0.0, content LONGTEXT, file_url TEXT, created_at VARCHAR(50) NOT NULL)"); } catch (e) {}
@@ -1032,6 +1055,8 @@ async function migrateColumns() {
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN username TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN profile_pic TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Users ADD COLUMN avatar_shape TEXT NULL", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Colleges ADD COLUMN cover_image TEXT NULL", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Colleges ADD COLUMN logo_image TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE OnlineClasses ADD COLUMN thumbnail TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE OnlineClasses ADD COLUMN lecture_type TEXT DEFAULT 'video'", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("CREATE TABLE IF NOT EXISTS StudyNotes (note_id INTEGER PRIMARY KEY AUTOINCREMENT, teacher_id INTEGER NOT NULL, course_id INTEGER NOT NULL, title TEXT NOT NULL, description TEXT, price REAL DEFAULT 0.0, content TEXT, file_url TEXT, created_at TEXT NOT NULL)", () => resolve())); } catch (e) {}

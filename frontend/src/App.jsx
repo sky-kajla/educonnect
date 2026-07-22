@@ -162,6 +162,9 @@ export default function App() {
   const [newCollegeName, setNewCollegeName] = useState('');
   const [newCollegeLocation, setNewCollegeLocation] = useState('');
   const [newCollegeContact, setNewCollegeContact] = useState('');
+  const [newCollegeCover, setNewCollegeCover] = useState('');
+  const [newCollegeLogo, setNewCollegeLogo] = useState('');
+  const [editingCollege, setEditingCollege] = useState(null);
   const [newCourseName, setNewCourseName] = useState('');
   const [newCourseCommission, setNewCourseCommission] = useState('');
   const [newCourseCollegeId, setNewCourseCollegeId] = useState('');
@@ -1236,17 +1239,58 @@ export default function App() {
       const res = await fetch('/api/colleges', {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ college_name: newCollegeName, location: newCollegeLocation, contact: newCollegeContact })
+        body: JSON.stringify({ 
+          college_name: newCollegeName, 
+          location: newCollegeLocation, 
+          contact: newCollegeContact,
+          cover_image: newCollegeCover || null,
+          logo_image: newCollegeLogo || null
+        })
       });
       if (res.ok) {
         showToast('College added successfully!');
         setNewCollegeName('');
         setNewCollegeLocation('');
         setNewCollegeContact('');
+        setNewCollegeCover('');
+        setNewCollegeLogo('');
         fetchColleges();
       } else {
         const data = await res.json();
         showToast(data.error || 'Failed to add college', 'danger');
+      }
+    } catch (err) {
+      showToast('Server connection error', 'danger');
+    }
+  };
+
+  const handleEditCollege = async (e) => {
+    e.preventDefault();
+    if (!editingCollege) return;
+    try {
+      const res = await fetch(`/api/colleges/${editingCollege.college_id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ 
+          college_name: newCollegeName, 
+          location: newCollegeLocation, 
+          contact: newCollegeContact,
+          cover_image: newCollegeCover || null,
+          logo_image: newCollegeLogo || null
+        })
+      });
+      if (res.ok) {
+        showToast('College details updated successfully!');
+        setNewCollegeName('');
+        setNewCollegeLocation('');
+        setNewCollegeContact('');
+        setNewCollegeCover('');
+        setNewCollegeLogo('');
+        setEditingCollege(null);
+        fetchColleges();
+      } else {
+        const data = await res.json();
+        showToast(data.error || 'Failed to update college', 'danger');
       }
     } catch (err) {
       showToast('Server connection error', 'danger');
@@ -1617,8 +1661,8 @@ export default function App() {
               >
                 {/* Hero Header Banner */}
                 <div style={{ 
-                  height: '110px', 
-                  background: collegeColorGradient, 
+                  height: '140px', 
+                  background: col.cover_image ? `url(${col.cover_image}) center/cover no-repeat` : collegeColorGradient, 
                   position: 'relative', 
                   display: 'flex', 
                   alignItems: 'flex-end',
@@ -1663,23 +1707,40 @@ export default function App() {
                 }}>
                   <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
                     {/* Circle Emblem Badge */}
-                    <div style={{ 
-                      width: '76px', 
-                      height: '76px', 
-                      borderRadius: '16px', 
-                      background: collegeColorGradient, 
-                      border: '4px solid #0b0f19',
-                      boxShadow: '0 12px 24px rgba(0,0,0,0.4)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      fontSize: '1.6rem',
-                      fontWeight: '800',
-                      flexShrink: 0
-                    }}>
-                      {initialBadge}
-                    </div>
+                    {col.logo_image ? (
+                      <img 
+                        src={col.logo_image} 
+                        alt={col.college_name} 
+                        style={{ 
+                          width: '76px', 
+                          height: '76px', 
+                          borderRadius: '16px', 
+                          border: '4px solid #0b0f19',
+                          boxShadow: '0 12px 24px rgba(0,0,0,0.4)',
+                          objectFit: 'cover',
+                          background: '#fff',
+                          flexShrink: 0
+                        }} 
+                      />
+                    ) : (
+                      <div style={{ 
+                        width: '76px', 
+                        height: '76px', 
+                        borderRadius: '16px', 
+                        background: collegeColorGradient, 
+                        border: '4px solid #0b0f19',
+                        boxShadow: '0 12px 24px rgba(0,0,0,0.4)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff',
+                        fontSize: '1.6rem',
+                        fontWeight: '800',
+                        flexShrink: 0
+                      }}>
+                        {initialBadge}
+                      </div>
+                    )}
 
                     <div>
                       <h3 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0, color: '#fff' }}>{col.college_name}</h3>
@@ -2782,46 +2843,280 @@ export default function App() {
 
         {/* Manage Colleges sub-view */}
         {adminSubTab === 'colleges' && (
-          <div className="grid-container" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', alignItems: 'start' }}>
-            <div className="card">
-              <h3 style={{ fontSize: '1.15rem', marginBottom: '1.25rem' }}>Add Partner College</h3>
-              <form onSubmit={handleAddCollege}>
-                <div className="form-group">
-                  <label>College Name</label>
-                  <input type="text" className="form-control" value={newCollegeName} onChange={(e) => setNewCollegeName(e.target.value)} required placeholder="e.g. Princeton University" />
-                </div>
-                <div className="form-group">
-                  <label>Location</label>
-                  <input type="text" className="form-control" value={newCollegeLocation} onChange={(e) => setNewCollegeLocation(e.target.value)} required placeholder="Princeton, New Jersey" />
-                </div>
-                <div className="form-group">
-                  <label>Admissions Email</label>
-                  <input type="email" className="form-control" value={newCollegeContact} onChange={(e) => setNewCollegeContact(e.target.value)} required placeholder="admissions@princeton.edu" />
-                </div>
-                <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Add College</button>
-              </form>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <div className="grid-container" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', alignItems: 'start', gap: '1.5rem' }}>
+              
+              {/* Left Column: Add / Edit College form */}
+              <div className="card">
+                <h3 style={{ fontSize: '1.25rem', marginBottom: '1.25rem', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>
+                  {editingCollege ? "✏️ Edit Partner College" : "🏢 Add Partner College"}
+                </h3>
+                <form onSubmit={editingCollege ? handleEditCollege : handleAddCollege}>
+                  <div className="form-group">
+                    <label>College Name</label>
+                    <input type="text" className="form-control" value={newCollegeName} onChange={(e) => setNewCollegeName(e.target.value)} required placeholder="e.g. Princeton University" />
+                  </div>
+                  <div className="form-group">
+                    <label>Location</label>
+                    <input type="text" className="form-control" value={newCollegeLocation} onChange={(e) => setNewCollegeLocation(e.target.value)} required placeholder="e.g. Princeton, New Jersey" />
+                  </div>
+                  <div className="form-group">
+                    <label>Admissions Contact Email</label>
+                    <input type="email" className="form-control" value={newCollegeContact} onChange={(e) => setNewCollegeContact(e.target.value)} required placeholder="e.g. admissions@princeton.edu" />
+                  </div>
+
+                  {/* College Logo Picker */}
+                  <div className="form-group" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem', marginTop: '1rem' }}>
+                    <label>College Profile Logo / Emblem Image</label>
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      {newCollegeLogo ? (
+                        <img src={newCollegeLogo} alt="Logo Preview" style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover', border: '1px solid var(--border-glass-hover)', background: '#fff' }} />
+                      ) : (
+                        <div style={{ width: '50px', height: '50px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px dashed var(--border-glass)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                          No Logo
+                        </div>
+                      )}
+                      <div style={{ flex: 1 }}>
+                        <input 
+                          type="text" 
+                          className="form-control" 
+                          style={{ fontSize: '0.8rem', padding: '0.35rem 0.65rem' }} 
+                          value={newCollegeLogo} 
+                          onChange={(e) => setNewCollegeLogo(e.target.value)} 
+                          placeholder="Paste Logo Image URL or upload below" 
+                        />
+                      </div>
+                    </div>
+
+                    {/* Presets Logos */}
+                    <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', alignSelf: 'center' }}>Presets:</span>
+                      {[
+                        { label: 'Blue Crest', url: 'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=300&auto=format&fit=crop&q=80' },
+                        { label: 'Gold Crest', url: 'https://images.unsplash.com/photo-1627556704302-624286467c65?w=300&auto=format&fit=crop&q=80' },
+                        { label: 'Book Emblem', url: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=300&auto=format&fit=crop&q=80' }
+                      ].map(preset => (
+                        <button 
+                          key={preset.label} 
+                          type="button" 
+                          className="btn btn-secondary" 
+                          style={{ padding: '0.15rem 0.45rem', fontSize: '0.65rem', background: newCollegeLogo === preset.url ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.03)', borderColor: newCollegeLogo === preset.url ? 'var(--accent)' : 'rgba(255,255,255,0.08)' }}
+                          onClick={() => setNewCollegeLogo(preset.url)}
+                        >
+                          🏅 {preset.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* File Upload for Logo */}
+                    <div>
+                      <label htmlFor="college-logo-upload" className="btn btn-secondary" style={{ width: '100%', padding: '0.3rem', fontSize: '0.75rem', textAlign: 'center', cursor: 'pointer', display: 'block' }}>
+                        📁 Upload Logo from PC
+                      </label>
+                      <input 
+                        id="college-logo-upload" 
+                        type="file" 
+                        accept="image/*" 
+                        style={{ display: 'none' }} 
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            resizeImageToBase64(file, 'medium', (base64) => {
+                              setNewCollegeLogo(base64);
+                              showToast("College logo uploaded successfully!");
+                            });
+                          }
+                        }} 
+                      />
+                    </div>
+                  </div>
+
+                  {/* College Cover Image Picker */}
+                  <div className="form-group" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem', marginTop: '1rem' }}>
+                    <label>College Theme Background Cover Image</label>
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      {newCollegeCover ? (
+                        <img src={newCollegeCover} alt="Cover Preview" style={{ width: '80px', height: '45px', borderRadius: '6px', objectFit: 'cover', border: '1px solid var(--border-glass-hover)' }} />
+                      ) : (
+                        <div style={{ width: '80px', height: '45px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)', border: '1px dashed var(--border-glass)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                          No Cover
+                        </div>
+                      )}
+                      <div style={{ flex: 1 }}>
+                        <input 
+                          type="text" 
+                          className="form-control" 
+                          style={{ fontSize: '0.8rem', padding: '0.35rem 0.65rem' }} 
+                          value={newCollegeCover} 
+                          onChange={(e) => setNewCollegeCover(e.target.value)} 
+                          placeholder="Paste Cover Image URL or upload below" 
+                        />
+                      </div>
+                    </div>
+
+                    {/* Presets Covers */}
+                    <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', alignSelf: 'center' }}>Presets:</span>
+                      {[
+                        { label: 'Campus Yard', url: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&auto=format&fit=crop&q=80' },
+                        { label: 'Lecture Hall', url: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&auto=format&fit=crop&q=80' },
+                        { label: 'Modern Library', url: 'https://images.unsplash.com/photo-1498243691581-b145c3f54a91?w=800&auto=format&fit=crop&q=80' }
+                      ].map(preset => (
+                        <button 
+                          key={preset.label} 
+                          type="button" 
+                          className="btn btn-secondary" 
+                          style={{ padding: '0.15rem 0.45rem', fontSize: '0.65rem', background: newCollegeCover === preset.url ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.03)', borderColor: newCollegeCover === preset.url ? 'var(--accent)' : 'rgba(255,255,255,0.08)' }}
+                          onClick={() => setNewCollegeCover(preset.url)}
+                        >
+                          🏞️ {preset.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* File Upload for Cover */}
+                    <div>
+                      <label htmlFor="college-cover-upload" className="btn btn-secondary" style={{ width: '100%', padding: '0.3rem', fontSize: '0.75rem', textAlign: 'center', cursor: 'pointer', display: 'block' }}>
+                        📁 Upload Cover from PC
+                      </label>
+                      <input 
+                        id="college-cover-upload" 
+                        type="file" 
+                        accept="image/*" 
+                        style={{ display: 'none' }} 
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            resizeImageToBase64(file, 'medium', (base64) => {
+                              setNewCollegeCover(base64);
+                              showToast("College cover theme uploaded successfully!");
+                            });
+                          }
+                        }} 
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem' }}>
+                    <button type="submit" className="btn btn-primary" style={{ flex: 2 }}>
+                      {editingCollege ? "Update College Details 💾" : "Add College 🏢"}
+                    </button>
+                    {editingCollege && (
+                      <button 
+                        type="button" 
+                        className="btn btn-secondary" 
+                        style={{ flex: 1 }}
+                        onClick={() => {
+                          setEditingCollege(null);
+                          setNewCollegeName('');
+                          setNewCollegeLocation('');
+                          setNewCollegeContact('');
+                          setNewCollegeCover('');
+                          setNewCollegeLogo('');
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </form>
+              </div>
+
+              {/* Middle Column: Add Program Form */}
+              <div className="card">
+                <h3 style={{ fontSize: '1.25rem', marginBottom: '1.25rem', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>Add Program & Payout</h3>
+                <form onSubmit={handleAddCourse}>
+                  <div className="form-group">
+                    <label>Affiliated College</label>
+                    <select className="form-control" value={newCourseCollegeId} onChange={(e) => setNewCourseCollegeId(e.target.value)} required>
+                      <option value="">-- Select College --</option>
+                      {colleges.map(c => <option key={c.college_id} value={c.college_id}>{c.college_name}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Program Name</label>
+                    <input type="text" className="form-control" value={newCourseName} onChange={(e) => setNewCourseName(e.target.value)} required placeholder="e.g. Master in Economics" />
+                  </div>
+                  <div className="form-group">
+                    <label>Referral Commission ($ USD)</label>
+                    <input type="number" className="form-control" value={newCourseCommission} onChange={(e) => setNewCourseCommission(e.target.value)} required placeholder="e.g. 1500" />
+                  </div>
+                  <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>Add Program</button>
+                </form>
+              </div>
             </div>
 
+            {/* Bottom Row: Manage Existing Colleges Directory List */}
             <div className="card">
-              <h3 style={{ fontSize: '1.15rem', marginBottom: '1.25rem' }}>Add Program & Payout</h3>
-              <form onSubmit={handleAddCourse}>
-                <div className="form-group">
-                  <label>Affiliated College</label>
-                  <select className="form-control" value={newCourseCollegeId} onChange={(e) => setNewCourseCollegeId(e.target.value)} required>
-                    <option value="">-- Select College --</option>
-                    {colleges.map(c => <option key={c.college_id} value={c.college_id}>{c.college_name}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Program Name</label>
-                  <input type="text" className="form-control" value={newCourseName} onChange={(e) => setNewCourseName(e.target.value)} required placeholder="e.g. Master in Economics" />
-                </div>
-                <div className="form-group">
-                  <label>Referral Commission ($ USD)</label>
-                  <input type="number" className="form-control" value={newCourseCommission} onChange={(e) => setNewCourseCommission(e.target.value)} required placeholder="e.g. 1500" />
-                </div>
-                <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Add Program</button>
-              </form>
+              <h3 style={{ fontSize: '1.25rem', marginBottom: '1.25rem', color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>
+                📋 Manage Partner Universities ({colleges.length})
+              </h3>
+              <div className="table-container" style={{ margin: 0, background: 'none', border: 'none' }}>
+                {colleges.length > 0 ? (
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Emblem</th>
+                        <th>College Name</th>
+                        <th>Location</th>
+                        <th>Contact Email</th>
+                        <th>Programs</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {colleges.map(col => (
+                        <tr key={col.college_id}>
+                          <td>
+                            {col.logo_image ? (
+                              <img src={col.logo_image} alt={col.college_name} style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover', border: '1px solid var(--border-glass)', background: '#fff' }} />
+                            ) : (
+                              <div style={{ width: '36px', height: '36px', borderRadius: '6px', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                                {col.college_name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ fontWeight: '600' }}>{col.college_name}</td>
+                          <td>{col.location}</td>
+                          <td>{col.contact}</td>
+                          <td>
+                            <span style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: '4px', border: '1px solid var(--border-glass)' }}>
+                              📚 {(col.courses || []).length} Programs
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '0.35rem' }}>
+                              <button 
+                                className="btn btn-secondary" 
+                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }} 
+                                onClick={() => {
+                                  setEditingCollege(col);
+                                  setNewCollegeName(col.college_name);
+                                  setNewCollegeLocation(col.location);
+                                  setNewCollegeContact(col.contact);
+                                  setNewCollegeCover(col.cover_image || '');
+                                  setNewCollegeLogo(col.logo_image || '');
+                                }}
+                              >
+                                ✏️ Edit
+                              </button>
+                              <button 
+                                className="btn btn-secondary" 
+                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderColor: 'var(--danger)', color: 'var(--danger)' }} 
+                                onClick={() => handleDeleteDbRow('colleges', col.college_id)}
+                              >
+                                🗑️ Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem' }}>No colleges registered in system directory.</p>
+                )}
+              </div>
             </div>
           </div>
         )}
