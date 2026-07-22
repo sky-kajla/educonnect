@@ -160,7 +160,11 @@ app.post('/api/auth/register', async (req, res) => {
         gender: null,
         username: null,
         profile_pic: null,
-        avatar_shape: 'circle'
+        avatar_shape: 'circle',
+        bank_name: null,
+        bank_account_holder: null,
+        bank_account_no: null,
+        bank_ifsc_code: null
       }
     });
   } catch (err) {
@@ -200,7 +204,11 @@ app.post('/api/auth/login', async (req, res) => {
         gender: user.gender,
         username: user.username,
         profile_pic: user.profile_pic,
-        avatar_shape: user.avatar_shape || 'circle'
+        avatar_shape: user.avatar_shape || 'circle',
+        bank_name: user.bank_name || null,
+        bank_account_holder: user.bank_account_holder || null,
+        bank_account_no: user.bank_account_no || null,
+        bank_ifsc_code: user.bank_ifsc_code || null
       }
     });
   } catch (err) {
@@ -265,7 +273,13 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
-    const user = await db.get("SELECT user_id, name, email, role, wallet_balance, mobile, address, age, gender, username, profile_pic, avatar_shape FROM Users WHERE user_id = ?", [req.user.user_id]);
+    const user = await db.get(
+      `SELECT 
+        user_id, name, email, role, wallet_balance, mobile, address, age, gender, username, profile_pic, avatar_shape,
+        bank_name, bank_account_holder, bank_account_no, bank_ifsc_code 
+       FROM Users WHERE user_id = ?`, 
+      [req.user.user_id]
+    );
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
   } catch (err) {
@@ -295,7 +309,10 @@ app.post('/api/auth/me', authenticateToken, async (req, res) => {
 });
 
 app.put('/api/auth/profile', authenticateToken, async (req, res) => {
-  const { name, email, mobile, address, age, gender, username, profile_pic, avatar_shape } = req.body;
+  const { 
+    name, email, mobile, address, age, gender, username, profile_pic, avatar_shape,
+    bank_name, bank_account_holder, bank_account_no, bank_ifsc_code 
+  } = req.body;
   if (!name || !email) {
     return res.status(400).json({ error: 'Name and email are required' });
   }
@@ -314,7 +331,10 @@ app.put('/api/auth/profile', authenticateToken, async (req, res) => {
     }
 
     await db.run(
-      "UPDATE Users SET name = ?, email = ?, mobile = ?, address = ?, age = ?, gender = ?, username = ?, profile_pic = ?, avatar_shape = ? WHERE user_id = ?",
+      `UPDATE Users SET 
+        name = ?, email = ?, mobile = ?, address = ?, age = ?, gender = ?, username = ?, profile_pic = ?, avatar_shape = ?,
+        bank_name = ?, bank_account_holder = ?, bank_account_no = ?, bank_ifsc_code = ?
+       WHERE user_id = ?`,
       [
         name, 
         email, 
@@ -325,10 +345,20 @@ app.put('/api/auth/profile', authenticateToken, async (req, res) => {
         username || null, 
         profile_pic || null, 
         avatar_shape || 'circle',
+        bank_name || null,
+        bank_account_holder || null,
+        bank_account_no || null,
+        bank_ifsc_code || null,
         req.user.user_id
       ]
     );
-    const updatedUser = await db.get("SELECT user_id, name, email, role, wallet_balance, mobile, address, age, gender, username, profile_pic, avatar_shape FROM Users WHERE user_id = ?", [req.user.user_id]);
+    const updatedUser = await db.get(
+      `SELECT 
+        user_id, name, email, role, wallet_balance, mobile, address, age, gender, username, profile_pic, avatar_shape,
+        bank_name, bank_account_holder, bank_account_no, bank_ifsc_code 
+       FROM Users WHERE user_id = ?`, 
+      [req.user.user_id]
+    );
     
     res.json({ message: 'Profile updated successfully!', user: updatedUser });
   } catch (err) {
@@ -1354,6 +1384,59 @@ app.post('/api/whatsapp/config', authenticateToken, requireAdmin, async (req, re
     }
 
     res.json({ message: 'WhatsApp support configuration permanently updated in database.', config: whatsappBot.botConfig });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get all users in system (Admin Only)
+app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const users = await db.all(
+      `SELECT 
+        user_id, name, email, role, wallet_balance, mobile, address, age, gender, username, profile_pic, avatar_shape,
+        bank_name, bank_account_holder, bank_account_no, bank_ifsc_code 
+       FROM Users ORDER BY user_id DESC`
+    );
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update a user's details (Admin Only)
+app.put('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+  const userId = parseInt(req.params.id);
+  const { role, wallet_balance } = req.body;
+
+  if (!role || wallet_balance === undefined) {
+    return res.status(400).json({ error: 'Role and wallet balance are required' });
+  }
+
+  try {
+    const user = await db.get("SELECT * FROM Users WHERE user_id = ?", [userId]);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    await db.run(
+      "UPDATE Users SET role = ?, wallet_balance = ? WHERE user_id = ?",
+      [role, parseFloat(wallet_balance), userId]
+    );
+
+    res.json({ message: 'User updated successfully!' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete a user (Admin Only)
+app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+  const userId = parseInt(req.params.id);
+  try {
+    const user = await db.get("SELECT * FROM Users WHERE user_id = ?", [userId]);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    await db.run("DELETE FROM Users WHERE user_id = ?", [userId]);
+    res.json({ message: 'User deleted successfully!' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

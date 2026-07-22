@@ -152,6 +152,12 @@ export default function App() {
   const [sqlConsoleQuery, setSqlConsoleQuery] = useState('SELECT user_id, name, email, role, wallet_balance FROM Users');
   const [sqlConsoleOutput, setSqlConsoleOutput] = useState('');
 
+  // Admin Users management state
+  const [adminUsers, setAdminUsers] = useState([]);
+  const [selectedAdminUser, setSelectedAdminUser] = useState(null);
+  const [editUserRole, setEditUserRole] = useState('');
+  const [editUserWallet, setEditUserWallet] = useState('');
+
   // Referral Modal state
   const [showReferModal, setShowReferModal] = useState(false);
   const [referStudentName, setReferStudentName] = useState('');
@@ -215,6 +221,10 @@ export default function App() {
   const [showAvatarLightbox, setShowAvatarLightbox] = useState(false);
   const [profileCurrentPassword, setProfileCurrentPassword] = useState('');
   const [profileNewPassword, setProfileNewPassword] = useState('');
+  const [profileBankName, setProfileBankName] = useState('');
+  const [profileBankAccountHolder, setProfileBankAccountHolder] = useState('');
+  const [profileBankAccountNo, setProfileBankAccountNo] = useState('');
+  const [profileBankIfscCode, setProfileBankIfscCode] = useState('');
 
   // Colleges Search & Filter states
   const [collegeSearch, setCollegeSearch] = useState('');
@@ -373,6 +383,10 @@ export default function App() {
       setProfileUsername(user.username || '');
       setProfilePic(user.profile_pic || '');
       setAvatarShape(user.avatar_shape || 'circle');
+      setProfileBankName(user.bank_name || '');
+      setProfileBankAccountHolder(user.bank_account_holder || '');
+      setProfileBankAccountNo(user.bank_account_no || '');
+      setProfileBankIfscCode(user.bank_ifsc_code || '');
     }
   }, [user]);
 
@@ -444,6 +458,7 @@ export default function App() {
         fetchAdminStats();
         fetchDbTablesList();
         fetchEmailSettings();
+        fetchAdminUsers();
       }
       if (user.role === 'teacher') {
         fetchTeacherData();
@@ -885,7 +900,11 @@ export default function App() {
           gender: profileGender,
           username: profileUsername,
           profile_pic: profilePic,
-          avatar_shape: avatarShape
+          avatar_shape: avatarShape,
+          bank_name: profileBankName,
+          bank_account_holder: profileBankAccountHolder,
+          bank_account_no: profileBankAccountNo,
+          bank_ifsc_code: profileBankIfscCode
         })
       });
       const data = await res.json();
@@ -1230,6 +1249,60 @@ export default function App() {
       }
     } catch (err) {
       showToast('Server connection error', 'danger');
+    }
+  };
+
+  const fetchAdminUsers = async () => {
+    try {
+      const res = await fetch('/api/admin/users', { headers: getAuthHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setAdminUsers(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch admin users:", err);
+    }
+  };
+
+  const handleUpdateUserAdmin = async (userId, role, balance) => {
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ role, wallet_balance: parseFloat(balance) })
+      });
+      if (res.ok) {
+        showToast("User details updated successfully!");
+        setSelectedAdminUser(null);
+        fetchAdminUsers();
+        fetchAdminStats(); // refresh counts
+      } else {
+        const data = await res.json();
+        showToast(data.error || 'Failed to update user', 'danger');
+      }
+    } catch (err) {
+      showToast('Connection error', 'danger');
+    }
+  };
+
+  const handleDeleteUserAdmin = async (userId) => {
+    if (!window.confirm("Are you sure you want to permanently delete this user account? This action cannot be undone.")) return;
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      if (res.ok) {
+        showToast("User account deleted successfully!");
+        setSelectedAdminUser(null);
+        fetchAdminUsers();
+        fetchAdminStats(); // refresh counts
+      } else {
+        const data = await res.json();
+        showToast(data.error || 'Failed to delete user', 'danger');
+      }
+    } catch (err) {
+      showToast('Connection error', 'danger');
     }
   };
 
@@ -2734,6 +2807,7 @@ export default function App() {
         <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-glass)', paddingBottom: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
           <button className={`btn ${adminSubTab === 'overview' ? 'btn-primary' : 'btn-secondary'}`} style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }} onClick={() => setAdminSubTab('overview')}>Overview Stats</button>
           <button className={`btn ${adminSubTab === 'admissions' ? 'btn-primary' : 'btn-secondary'}`} style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }} onClick={() => setAdminSubTab('admissions')}>Referral Queue</button>
+          <button className={`btn ${adminSubTab === 'manage_users' ? 'btn-primary' : 'btn-secondary'}`} style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }} onClick={() => { setAdminSubTab('manage_users'); fetchAdminUsers(); }}>Manage Users 👥</button>
           <button className={`btn ${adminSubTab === 'colleges' ? 'btn-primary' : 'btn-secondary'}`} style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }} onClick={() => setAdminSubTab('colleges')}>Manage Colleges</button>
           <button className={`btn ${adminSubTab === 'whatsapp_bot' ? 'btn-primary' : 'btn-secondary'}`} style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', borderColor: '#25D366', color: adminSubTab === 'whatsapp_bot' ? '#fff' : '#25D366' }} onClick={() => setAdminSubTab('whatsapp_bot')}>WhatsApp Bot 💬</button>
           <button className={`btn ${adminSubTab === 'db_explorer' ? 'btn-primary' : 'btn-secondary'}`} style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', borderColor: 'var(--accent)', color: adminSubTab === 'db_explorer' ? '#fff' : 'var(--accent)' }} onClick={() => setAdminSubTab('db_explorer')}>Database Explorer 🗄️</button>
@@ -2837,6 +2911,223 @@ export default function App() {
               ) : (
                 <p style={{ color: 'var(--text-muted)' }}>No referrals currently pending in queue.</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Manage Users sub-view */}
+        {adminSubTab === 'manage_users' && (
+          <div className="card">
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>👥 System Registered Accounts</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+              View user profiles, inspect linked bank payout details, change permissions, manually override wallet balance credits, or delete accounts.
+            </p>
+            <div className="table-container" style={{ background: 'none', border: 'none', marginTop: '0' }}>
+              {adminUsers.length > 0 ? (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Wallet Balance</th>
+                      <th>Payout Info</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminUsers.map(u => {
+                      const hasBank = u.bank_name && u.bank_account_no;
+                      return (
+                        <tr key={u.user_id}>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                              {u.profile_pic ? (
+                                <img src={u.profile_pic} alt={u.name} style={{ width: '32px', height: '32px', borderRadius: getAvatarBorderRadius(u.avatar_shape), objectFit: 'cover', border: '1px solid var(--border-glass)' }} />
+                              ) : (
+                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                                  {u.name.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <div>
+                                <div style={{ fontWeight: '600' }}>{u.name}</div>
+                                {u.username && <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>@{u.username}</div>}
+                              </div>
+                            </div>
+                          </td>
+                          <td>{u.email}</td>
+                          <td>
+                            <span className={`status-badge ${u.role === 'admin' ? 'live' : u.role === 'teacher' ? 'pending' : 'completed'}`} style={{ textTransform: 'capitalize', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                              👤 {u.role}
+                            </span>
+                          </td>
+                          <td style={{ fontWeight: '600', color: 'var(--success)' }}>
+                            ${u.wallet_balance.toFixed(2)}
+                          </td>
+                          <td>
+                            {hasBank ? (
+                              <span className="status-badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', borderColor: 'rgba(16, 185, 129, 0.3)', fontSize: '0.7rem', fontWeight: 'bold' }}>
+                                🏦 Bank Linked
+                              </span>
+                            ) : (
+                              <span className="status-badge" style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', borderColor: 'var(--border-glass)', fontSize: '0.7rem' }}>
+                                ❌ No Bank Info
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '0.35rem' }}>
+                              <button 
+                                className="btn btn-primary" 
+                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', fontWeight: 'bold' }} 
+                                onClick={() => {
+                                  setSelectedAdminUser(u);
+                                  setEditUserRole(u.role);
+                                  setEditUserWallet(u.wallet_balance);
+                                }}
+                              >
+                                🔍 View Details
+                              </button>
+                              {user.user_id !== u.user_id && (
+                                <button 
+                                  className="btn btn-secondary" 
+                                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', borderColor: 'var(--danger)', color: 'var(--danger)' }} 
+                                  onClick={() => handleDeleteUserAdmin(u.user_id)}
+                                >
+                                  🗑️ Delete
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <p style={{ color: 'var(--text-muted)' }}>No users registered in the system database.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* User Details Modal Popup */}
+        {selectedAdminUser && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+            <div style={{ background: '#0b0f19', border: '1px solid var(--border-glass-hover)', borderRadius: '20px', maxWidth: '600px', width: '100%', maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: '2rem', boxShadow: '0 25px 50px rgba(0,0,0,0.6)' }}>
+              
+              {/* Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  {selectedAdminUser.profile_pic ? (
+                    <img src={selectedAdminUser.profile_pic} alt={selectedAdminUser.name} style={{ width: '56px', height: '56px', borderRadius: getAvatarBorderRadius(selectedAdminUser.avatar_shape), objectFit: 'cover', border: '2px solid var(--primary)' }} />
+                  ) : (
+                    <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--accent))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>
+                      {selectedAdminUser.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#fff' }}>{selectedAdminUser.name}</h3>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>{selectedAdminUser.email}</p>
+                  </div>
+                </div>
+                <button className="btn btn-secondary" style={{ padding: '0.25rem 0.65rem', fontSize: '0.8rem' }} onClick={() => setSelectedAdminUser(null)}>✕ Close</button>
+              </div>
+
+              {/* Core & Contact Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Username</span>
+                  <strong style={{ color: '#fff' }}>@{selectedAdminUser.username || 'not_set'}</strong>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Mobile Number</span>
+                  <strong style={{ color: '#fff' }}>{selectedAdminUser.mobile || 'Not provided'}</strong>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Gender</span>
+                  <strong style={{ color: '#fff' }}>{selectedAdminUser.gender || 'Not specified'}</strong>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Age</span>
+                  <strong style={{ color: '#fff' }}>{selectedAdminUser.age ? `${selectedAdminUser.age} years` : 'Not specified'}</strong>
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', textTransform: 'uppercase' }}>Address</span>
+                  <strong style={{ color: '#fff' }}>{selectedAdminUser.address || 'No address provided'}</strong>
+                </div>
+              </div>
+
+              {/* Bank Details section */}
+              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-glass)', padding: '1.25rem', borderRadius: '12px', marginBottom: '1.5rem' }}>
+                <h4 style={{ fontSize: '0.95rem', margin: '0 0 0.75rem 0', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span>🏦</span> Bank Payout Details
+                </h4>
+                {selectedAdminUser.bank_name ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.85rem' }}>
+                    <div>
+                      <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem' }}>Bank Name</span>
+                      <span style={{ fontWeight: '600', color: '#fff' }}>{selectedAdminUser.bank_name}</span>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem' }}>Account Holder</span>
+                      <span style={{ fontWeight: '600', color: '#fff' }}>{selectedAdminUser.bank_account_holder}</span>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem' }}>Account Number</span>
+                      <span style={{ fontWeight: '600', color: '#fff', fontFamily: 'monospace' }}>{selectedAdminUser.bank_account_no}</span>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem' }}>IFSC / Routing Code</span>
+                      <span style={{ fontWeight: '600', color: '#fff', fontFamily: 'monospace' }}>{selectedAdminUser.bank_ifsc_code}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: 0, fontStyle: 'italic' }}>
+                    No bank payout details have been configured by this user.
+                  </p>
+                )}
+              </div>
+
+              {/* Edit Controls */}
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '1.25rem' }}>
+                <h4 style={{ fontSize: '0.95rem', margin: '0 0 1rem 0', color: '#fff' }}>✏️ Modify User Account Permissions</h4>
+                
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.25rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.35rem' }}>User Role</label>
+                    <select className="form-control" value={editUserRole} onChange={(e) => setEditUserRole(e.target.value)}>
+                      <option value="student">Student</option>
+                      <option value="teacher">Teacher</option>
+                      <option value="admin">Administrator</option>
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.35rem' }}>Wallet Balance ($ USD)</label>
+                    <input type="number" step="0.01" className="form-control" value={editUserWallet} onChange={(e) => setEditUserWallet(e.target.value)} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button 
+                    className="btn btn-primary" 
+                    style={{ flex: 2, fontWeight: 'bold' }} 
+                    onClick={() => handleUpdateUserAdmin(selectedAdminUser.user_id, editUserRole, editUserWallet)}
+                  >
+                    Save Changes 💾
+                  </button>
+                  {user.user_id !== selectedAdminUser.user_id && (
+                    <button 
+                      className="btn btn-secondary" 
+                      style={{ flex: 1, borderColor: 'var(--danger)', color: 'var(--danger)' }} 
+                      onClick={() => handleDeleteUserAdmin(selectedAdminUser.user_id)}
+                    >
+                      Delete Account 🗑️
+                    </button>
+                  )}
+                </div>
+              </div>
+
             </div>
           </div>
         )}
@@ -3596,6 +3887,57 @@ export default function App() {
                 <input type="text" className="form-control" value={user.role.toUpperCase()} disabled style={{ opacity: 0.6, cursor: 'not-allowed' }} />
               </div>
               <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>Update Profile</button>
+            </form>
+          </div>
+
+          {/* Bank Payout Details Panel */}
+          <div className="card">
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>🏦 Bank Payout Details</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '1.5rem' }}>
+              Set your bank details below. Our team uses this information to disburse your referral commission earnings.
+            </p>
+            <form onSubmit={handleUpdateProfile}>
+              <div className="form-group">
+                <label>Bank Name</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  value={profileBankName} 
+                  onChange={(e) => setProfileBankName(e.target.value)} 
+                  placeholder="e.g. Chase Bank, State Bank of India" 
+                />
+              </div>
+              <div className="form-group">
+                <label>Account Holder Name</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  value={profileBankAccountHolder} 
+                  onChange={(e) => setProfileBankAccountHolder(e.target.value)} 
+                  placeholder="e.g. John Doe" 
+                />
+              </div>
+              <div className="form-group">
+                <label>Account Number</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  value={profileBankAccountNo} 
+                  onChange={(e) => setProfileBankAccountNo(e.target.value)} 
+                  placeholder="e.g. 1234567890" 
+                />
+              </div>
+              <div className="form-group">
+                <label>IFSC / SWIFT / Routing Code</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  value={profileBankIfscCode} 
+                  onChange={(e) => setProfileBankIfscCode(e.target.value)} 
+                  placeholder="e.g. CHASUS33XXX, SBIN0001234" 
+                />
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1.5rem' }}>Save Bank Details 💾</button>
             </form>
           </div>
 
