@@ -1820,14 +1820,15 @@ export default function App() {
           display: 'flex',
           flexDirection: 'column',
           gap: '1rem',
-          background: 'rgba(255,255,255,0.02)',
+          background: 'rgba(15, 23, 42, 0.45)',
           border: '1px solid var(--border-glass)',
           borderRadius: '16px',
           padding: '1.25rem',
           marginBottom: '2rem',
-          backdropFilter: 'blur(10px)'
+          backdropFilter: 'blur(12px)',
+          boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.2)'
         }}>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ flex: 1, minWidth: '280px', position: 'relative' }}>
               <input 
                 type="text" 
@@ -1835,15 +1836,15 @@ export default function App() {
                 placeholder="Search colleges, courses, or locations..." 
                 value={collegeSearch}
                 onChange={(e) => setCollegeSearch(e.target.value)}
-                style={{ paddingLeft: '2.5rem', height: '46px', fontSize: '0.9rem' }}
+                style={{ paddingLeft: '2.75rem', height: '46px', fontSize: '0.9rem', background: 'rgba(6, 9, 19, 0.8)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px' }}
               />
-              <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>🔍</span>
+              <span style={{ position: 'absolute', left: '1.1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '1rem' }}>🔍</span>
             </div>
             <select
               className="form-control"
               value={collegeFilterLocation}
               onChange={(e) => setCollegeFilterLocation(e.target.value)}
-              style={{ width: '200px', height: '46px', fontSize: '0.9rem' }}
+              style={{ width: '200px', height: '46px', fontSize: '0.9rem', background: 'rgba(6, 9, 19, 0.8)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px' }}
             >
               <option value="">🌎 All Locations</option>
               {uniqueLocations.map(loc => (
@@ -1853,11 +1854,22 @@ export default function App() {
             {(collegeSearch || collegeFilterLocation) && (
               <button 
                 className="btn btn-secondary" 
-                style={{ height: '46px', padding: '0 1rem' }} 
+                style={{ height: '46px', padding: '0 1.25rem', borderRadius: '10px' }} 
                 onClick={() => { setCollegeSearch(''); setCollegeFilterLocation(''); }}
               >
                 Clear Filters
               </button>
+            )}
+          </div>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-muted)', borderTop: '1px solid rgba(255,255,255,0.03)', paddingTop: '0.75rem' }}>
+            <div>
+              Showing <strong style={{ color: 'var(--primary)' }}>{filteredColleges.length}</strong> of <strong>{colleges.length}</strong> partner colleges
+            </div>
+            {collegeSearch && (
+              <div>
+                Filtering by keyword: <span style={{ color: 'var(--accent)', fontWeight: '600' }}>"{collegeSearch}"</span>
+              </div>
             )}
           </div>
         </div>
@@ -1883,62 +1895,35 @@ export default function App() {
               >
                 {/* Hero Header Banner */}
                 <div style={{ 
-                  height: '140px', 
+                  height: '180px', 
                   background: col.cover_image ? `url(${col.cover_image}) center/cover no-repeat` : collegeColorGradient, 
                   position: 'relative', 
                   display: 'flex', 
                   alignItems: 'flex-end',
                   padding: '1rem 1.5rem'
                 }}>
-                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' }} />
-                  
-                  {/* Floating Contact Badge */}
-                  <a 
-                    href={`mailto:${col.contact}`}
-                    style={{ 
-                      position: 'absolute', 
-                      top: '1rem', 
-                      right: '1.5rem', 
-                      background: 'rgba(255,255,255,0.15)', 
-                      backdropFilter: 'blur(8px)',
-                      border: '1px solid rgba(255,255,255,0.25)',
-                      color: '#fff',
-                      fontSize: '0.75rem',
-                      fontWeight: '700',
-                      padding: '0.4rem 0.8rem',
-                      borderRadius: '50px',
-                      textDecoration: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                      transition: 'background 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
-                  >
-                    ✉️ {col.contact}
-                  </a>
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%)' }} />
                 </div>
 
                 {/* Info Section with Floating Logo Badge */}
                 <div style={{ 
-                  padding: '0 1.5rem 1.5rem 1.5rem',
+                  padding: '0 1.75rem 1.75rem 1.75rem',
                   position: 'relative',
-                  marginTop: '-30px',
+                  marginTop: '-35px',
                   zIndex: 2
                 }}>
-                  <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-end', marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-end', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
                     {/* Circle Emblem Badge */}
                     {col.logo_image ? (
                       <img 
                         src={col.logo_image} 
                         alt={col.college_name} 
                         style={{ 
-                          width: '76px', 
-                          height: '76px', 
-                          borderRadius: '16px', 
-                          border: '4px solid #0b0f19',
-                          boxShadow: '0 12px 24px rgba(0,0,0,0.4)',
+                          width: '90px', 
+                          height: '90px', 
+                          borderRadius: '20px', 
+                          border: '5px solid var(--bg-main)',
+                          boxShadow: '0 15px 30px rgba(0,0,0,0.5)',
                           objectFit: 'cover',
                           background: '#fff',
                           flexShrink: 0
@@ -1946,17 +1931,17 @@ export default function App() {
                       />
                     ) : (
                       <div style={{ 
-                        width: '76px', 
-                        height: '76px', 
-                        borderRadius: '16px', 
+                        width: '90px', 
+                        height: '90px', 
+                        borderRadius: '20px', 
                         background: collegeColorGradient, 
-                        border: '4px solid #0b0f19',
-                        boxShadow: '0 12px 24px rgba(0,0,0,0.4)',
+                        border: '5px solid var(--bg-main)',
+                        boxShadow: '0 15px 30px rgba(0,0,0,0.5)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: '#fff',
-                        fontSize: '1.6rem',
+                        fontSize: '1.8rem',
                         fontWeight: '800',
                         flexShrink: 0
                       }}>
@@ -1964,51 +1949,63 @@ export default function App() {
                       </div>
                     )}
 
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ flex: 1, minWidth: '240px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
                         <div>
-                          <h3 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0, color: '#fff' }}>{col.college_name}</h3>
-                          <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-                            <span>📍 {col.location}</span>
-                            {col.established && <span style={{ padding: '0.1rem 0.4rem', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', fontSize: '0.75rem' }}>Est. {col.established}</span>}
-                            {col.rating_stars && <span style={{ padding: '0.1rem 0.4rem', background: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>⭐ {col.rating_stars}</span>}
+                          <h3 style={{ fontSize: '1.75rem', fontWeight: '900', margin: 0, color: '#fff', letterSpacing: '-0.02em', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{col.college_name}</h3>
+                          <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.5rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>📍 {col.location}</span>
+                            {col.established && <span style={{ padding: '0.2rem 0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', fontSize: '0.75rem', border: '1px solid rgba(255,255,255,0.08)' }}>🏛️ Est. {col.established}</span>}
+                            {col.rating_stars && <span style={{ padding: '0.2rem 0.5rem', background: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 'bold' }}>⭐ {col.rating_stars}</span>}
                           </div>
                         </div>
-                        {col.website && (
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.25rem' }}>
+                          {col.website && (
+                            <a 
+                              href={col.website} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="btn btn-secondary" 
+                              style={{ padding: '0.45rem 1rem', fontSize: '0.8rem', height: '36px', borderRadius: '8px' }}
+                            >
+                              🌐 Official Website
+                            </a>
+                          )}
                           <a 
-                            href={col.website} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="btn btn-secondary" 
-                            style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', height: 'fit-content' }}
+                            href={`mailto:${col.contact}`}
+                            className="btn btn-primary" 
+                            style={{ padding: '0.45rem 1rem', fontSize: '0.8rem', height: '36px', borderRadius: '8px' }}
                           >
-                            🌐 Visit Website
+                            ✉️ Contact Office
                           </a>
-                        )}
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {col.description && (
-                    <p style={{ 
-                      color: 'var(--text-muted)', 
-                      fontSize: '0.9rem', 
-                      lineHeight: '1.6', 
-                      marginBottom: '1.5rem', 
-                      background: 'rgba(255,255,255,0.01)',
-                      borderLeft: '3px solid var(--primary)',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '0 8px 8px 0'
+                    <div style={{ 
+                      background: 'rgba(255, 255, 255, 0.01)',
+                      borderLeft: '4px solid var(--primary)',
+                      padding: '1rem 1.25rem',
+                      borderRadius: '0 12px 12px 0',
+                      marginBottom: '2rem',
+                      borderTop: '1px solid rgba(255,255,255,0.02)',
+                      borderRight: '1px solid rgba(255,255,255,0.02)',
+                      borderBottom: '1px solid rgba(255,255,255,0.02)',
                     }}>
-                      {col.description}
-                    </p>
+                      <span style={{ display: 'block', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--primary)', fontWeight: '700', marginBottom: '0.35rem' }}>About the Institution</span>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.925rem', lineHeight: '1.6', margin: 0 }}>
+                        {col.description}
+                      </p>
+                    </div>
                   )}
 
                   {/* Course Cards grid */}
                   <h4 style={{ 
                     fontSize: '0.8rem', 
                     color: 'var(--text-muted)', 
-                    marginBottom: '1rem', 
+                    marginBottom: '1.25rem', 
                     textTransform: 'uppercase', 
                     letterSpacing: '0.08em', 
                     fontWeight: '700',
@@ -2018,60 +2015,100 @@ export default function App() {
                     Available Referral Programs
                   </h4>
 
-                  <div className="grid-container" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', marginTop: '0', gap: '1.25rem' }}>
-                    {col.courses && col.courses.map(course => (
-                      <div 
-                        key={course.course_id} 
-                        className="college-program-card"
-                        style={{ 
-                          background: 'rgba(255,255,255,0.02)', 
-                          padding: '1.25rem', 
-                          borderRadius: '14px', 
-                          border: '1px solid rgba(255,255,255,0.04)', 
-                          display: 'flex', 
-                          flexDirection: 'column', 
-                          justifyContent: 'space-between', 
-                          minHeight: '150px',
-                          transition: 'all 0.25s ease'
-                        }}
-                      >
-                        <div>
-                          <h5 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0, color: '#fff' }}>{course.course_name}</h5>
-                          <span style={{ 
-                            display: 'inline-flex', 
-                            alignItems: 'center', 
-                            gap: '0.3rem', 
-                            color: '#10b981', 
-                            background: 'rgba(16, 185, 129, 0.1)', 
-                            border: '1px solid rgba(16, 185, 129, 0.2)', 
-                            padding: '0.25rem 0.65rem', 
-                            borderRadius: '50px', 
-                            fontSize: '0.8rem', 
-                            fontWeight: '700',
-                            marginTop: '0.5rem'
-                          }}>
-                            💰 Earn ${course.commission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </span>
-                        </div>
+                  <div className="grid-container" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(285px, 1fr))', marginTop: '0', gap: '1.25rem' }}>
+                    {col.courses && col.courses.map(course => {
+                      const getCategoryForCourse = (name) => {
+                        const lower = name.toLowerCase();
+                        if (lower.includes('computer') || lower.includes('software') || lower.includes('tech') || lower.includes('bca') || lower.includes('mca') || lower.includes('engineering') || lower.includes('information')) {
+                          return { label: '💻 Tech & Software', color: 'var(--primary)' };
+                        }
+                        if (lower.includes('mba') || lower.includes('bba') || lower.includes('management') || lower.includes('business') || lower.includes('commerce') || lower.includes('finance')) {
+                          return { label: '📈 Management & Business', color: 'var(--accent)' };
+                        }
+                        if (lower.includes('science') || lower.includes('physics') || lower.includes('chemistry') || lower.includes('math') || lower.includes('biology')) {
+                          return { label: '🔬 Natural Sciences', color: 'var(--secondary)' };
+                        }
+                        return { label: '🎓 Academic Program', color: 'var(--text-muted)' };
+                      };
+                      const category = getCategoryForCourse(course.course_name);
 
-                        {(!user || user.role === 'student') && (
-                          <button 
-                            className="btn btn-accent" 
-                            style={{ 
-                              padding: '0.55rem 1rem', 
-                              width: '100%', 
-                              marginTop: '1.25rem', 
-                              fontSize: '0.85rem', 
-                              fontWeight: '700',
-                              boxShadow: '0 4px 12px rgba(56, 189, 248, 0.15)'
-                            }} 
-                            onClick={() => triggerReferralModal(col.college_id, course.course_id)}
-                          >
-                            Refer Student 🤝
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                      return (
+                        <div 
+                          key={course.course_id} 
+                          className="college-program-card"
+                          style={{ 
+                            background: 'rgba(15, 23, 42, 0.6)', 
+                            padding: '1.5rem', 
+                            borderRadius: '16px', 
+                            border: '1px solid rgba(255,255,255,0.05)', 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            justifyContent: 'space-between', 
+                            minHeight: '180px',
+                            transition: 'transform 0.25s, border-color 0.25s, box-shadow 0.25s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-3px)';
+                            e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+                            e.currentTarget.style.boxShadow = '0 8px 24px rgba(99, 102, 241, 0.15)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
+                        >
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                              <span style={{ fontSize: '0.7rem', color: category.color, background: `${category.color}15`, padding: '0.2rem 0.5rem', borderRadius: '4px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                                {category.label}
+                              </span>
+                            </div>
+                            <h5 style={{ fontSize: '1.15rem', fontWeight: '700', margin: 0, color: '#fff', lineHeight: '1.4' }}>{course.course_name}</h5>
+                            
+                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>⏱️ 2-4 Years</span>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>•</span>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>⚡ UGC Approved</span>
+                            </div>
+
+                            <div style={{ marginTop: '1rem' }}>
+                              <span style={{ 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '0.35rem', 
+                                color: 'var(--success)', 
+                                background: 'rgba(16, 185, 129, 0.08)', 
+                                border: '1px solid rgba(16, 185, 129, 0.25)', 
+                                padding: '0.35rem 0.85rem', 
+                                borderRadius: '50px', 
+                                fontSize: '0.825rem', 
+                                fontWeight: '800'
+                              }}>
+                                💰 Earn ${(course.commission != null ? parseFloat(course.commission).toFixed(2) : '0.00')} Payout
+                              </span>
+                            </div>
+                          </div>
+
+                          {(!user || user.role === 'student') && (
+                            <button 
+                              className="btn btn-primary" 
+                              style={{ 
+                                padding: '0.6rem 1rem', 
+                                width: '100%', 
+                                marginTop: '1.5rem', 
+                                fontSize: '0.85rem', 
+                                fontWeight: '700',
+                                borderRadius: '10px'
+                              }} 
+                              onClick={() => triggerReferralModal(col.college_id, course.course_id)}
+                            >
+                              Refer Candidate 🤝
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
