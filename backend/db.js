@@ -268,7 +268,11 @@ function createSqliteTables() {
       location TEXT NOT NULL,
       contact TEXT NOT NULL,
       cover_image TEXT NULL,
-      logo_image TEXT NULL
+      logo_image TEXT NULL,
+      description TEXT NULL,
+      website TEXT NULL,
+      established TEXT NULL,
+      rating_stars TEXT NULL
     )`,
     `CREATE TABLE IF NOT EXISTS Courses (
       course_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -415,7 +419,11 @@ async function createMysqlTables() {
       location VARCHAR(255) NOT NULL,
       contact VARCHAR(255) NOT NULL,
       cover_image LONGTEXT NULL,
-      logo_image LONGTEXT NULL
+      logo_image LONGTEXT NULL,
+      description TEXT NULL,
+      website VARCHAR(255) NULL,
+      established VARCHAR(50) NULL,
+      rating_stars VARCHAR(50) NULL
     )`,
     `CREATE TABLE IF NOT EXISTS Courses (
       course_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -1075,6 +1083,10 @@ async function migrateColumns() {
       try { await mysqlPool.query("ALTER TABLE Admissions ADD COLUMN student_percentage VARCHAR(50) NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE Colleges ADD COLUMN cover_image LONGTEXT NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE Colleges ADD COLUMN logo_image LONGTEXT NULL"); } catch (e) {}
+      try { await mysqlPool.query("ALTER TABLE Colleges ADD COLUMN description TEXT NULL"); } catch (e) {}
+      try { await mysqlPool.query("ALTER TABLE Colleges ADD COLUMN website VARCHAR(255) NULL"); } catch (e) {}
+      try { await mysqlPool.query("ALTER TABLE Colleges ADD COLUMN established VARCHAR(50) NULL"); } catch (e) {}
+      try { await mysqlPool.query("ALTER TABLE Colleges ADD COLUMN rating_stars VARCHAR(50) NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE OnlineClasses ADD COLUMN thumbnail LONGTEXT NULL"); } catch (e) {}
       try { await mysqlPool.query("ALTER TABLE OnlineClasses ADD COLUMN lecture_type VARCHAR(50) DEFAULT 'video'"); } catch (e) {}
       try { await mysqlPool.query("CREATE TABLE IF NOT EXISTS StudyNotes (note_id INT PRIMARY KEY AUTO_INCREMENT, teacher_id INT NOT NULL, course_id INT NOT NULL, title VARCHAR(255) NOT NULL, description TEXT, price DOUBLE DEFAULT 0.0, content LONGTEXT, file_url TEXT, created_at VARCHAR(50) NOT NULL)"); } catch (e) {}
@@ -1105,6 +1117,10 @@ async function migrateColumns() {
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Admissions ADD COLUMN student_percentage TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Colleges ADD COLUMN cover_image TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Colleges ADD COLUMN logo_image TEXT NULL", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Colleges ADD COLUMN description TEXT NULL", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Colleges ADD COLUMN website TEXT NULL", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Colleges ADD COLUMN established TEXT NULL", () => resolve())); } catch (e) {}
+      try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE Colleges ADD COLUMN rating_stars TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE OnlineClasses ADD COLUMN thumbnail TEXT NULL", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("ALTER TABLE OnlineClasses ADD COLUMN lecture_type TEXT DEFAULT 'video'", () => resolve())); } catch (e) {}
       try { await new Promise((resolve) => sqliteInstance.run("CREATE TABLE IF NOT EXISTS StudyNotes (note_id INTEGER PRIMARY KEY AUTOINCREMENT, teacher_id INTEGER NOT NULL, course_id INTEGER NOT NULL, title TEXT NOT NULL, description TEXT, price REAL DEFAULT 0.0, content TEXT, file_url TEXT, created_at TEXT NOT NULL)", () => resolve())); } catch (e) {}

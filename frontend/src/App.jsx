@@ -178,6 +178,10 @@ export default function App() {
   const [newCollegeContact, setNewCollegeContact] = useState('');
   const [newCollegeCover, setNewCollegeCover] = useState('');
   const [newCollegeLogo, setNewCollegeLogo] = useState('');
+  const [newCollegeDescription, setNewCollegeDescription] = useState('');
+  const [newCollegeWebsite, setNewCollegeWebsite] = useState('');
+  const [newCollegeEstablished, setNewCollegeEstablished] = useState('');
+  const [newCollegeRating, setNewCollegeRating] = useState('');
   const [editingCollege, setEditingCollege] = useState(null);
   const [newCourseName, setNewCourseName] = useState('');
   const [newCourseCommission, setNewCourseCommission] = useState('');
@@ -1342,7 +1346,11 @@ export default function App() {
           location: newCollegeLocation, 
           contact: newCollegeContact,
           cover_image: newCollegeCover || null,
-          logo_image: newCollegeLogo || null
+          logo_image: newCollegeLogo || null,
+          description: newCollegeDescription,
+          website: newCollegeWebsite,
+          established: newCollegeEstablished,
+          rating_stars: newCollegeRating
         })
       });
       if (res.ok) {
@@ -1352,6 +1360,10 @@ export default function App() {
         setNewCollegeContact('');
         setNewCollegeCover('');
         setNewCollegeLogo('');
+        setNewCollegeDescription('');
+        setNewCollegeWebsite('');
+        setNewCollegeEstablished('');
+        setNewCollegeRating('');
         fetchColleges();
       } else {
         const data = await res.json();
@@ -1374,7 +1386,11 @@ export default function App() {
           location: newCollegeLocation, 
           contact: newCollegeContact,
           cover_image: newCollegeCover || null,
-          logo_image: newCollegeLogo || null
+          logo_image: newCollegeLogo || null,
+          description: newCollegeDescription,
+          website: newCollegeWebsite,
+          established: newCollegeEstablished,
+          rating_stars: newCollegeRating
         })
       });
       if (res.ok) {
@@ -1384,6 +1400,10 @@ export default function App() {
         setNewCollegeContact('');
         setNewCollegeCover('');
         setNewCollegeLogo('');
+        setNewCollegeDescription('');
+        setNewCollegeWebsite('');
+        setNewCollegeEstablished('');
+        setNewCollegeRating('');
         setEditingCollege(null);
         fetchColleges();
       } else {
@@ -1944,13 +1964,45 @@ export default function App() {
                       </div>
                     )}
 
-                    <div>
-                      <h3 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0, color: '#fff' }}>{col.college_name}</h3>
-                      <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <span>📍</span> {col.location}
-                      </p>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div>
+                          <h3 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0, color: '#fff' }}>{col.college_name}</h3>
+                          <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.25rem', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                            <span>📍 {col.location}</span>
+                            {col.established && <span style={{ padding: '0.1rem 0.4rem', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', fontSize: '0.75rem' }}>Est. {col.established}</span>}
+                            {col.rating_stars && <span style={{ padding: '0.1rem 0.4rem', background: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>⭐ {col.rating_stars}</span>}
+                          </div>
+                        </div>
+                        {col.website && (
+                          <a 
+                            href={col.website} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="btn btn-secondary" 
+                            style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', height: 'fit-content' }}
+                          >
+                            🌐 Visit Website
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
+
+                  {col.description && (
+                    <p style={{ 
+                      color: 'var(--text-muted)', 
+                      fontSize: '0.9rem', 
+                      lineHeight: '1.6', 
+                      marginBottom: '1.5rem', 
+                      background: 'rgba(255,255,255,0.01)',
+                      borderLeft: '3px solid var(--primary)',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '0 8px 8px 0'
+                    }}>
+                      {col.description}
+                    </p>
+                  )}
 
                   {/* Course Cards grid */}
                   <h4 style={{ 
@@ -3327,6 +3379,24 @@ export default function App() {
                     <label>Admissions Contact Email</label>
                     <input type="email" className="form-control" value={newCollegeContact} onChange={(e) => setNewCollegeContact(e.target.value)} required placeholder="e.g. admissions@princeton.edu" />
                   </div>
+                  <div className="form-group">
+                    <label>Brief Description / Overview</label>
+                    <textarea className="form-control" value={newCollegeDescription} onChange={(e) => setNewCollegeDescription(e.target.value)} placeholder="e.g. Adamas is a top research-oriented private university in West Bengal with advanced science laboratories." rows="3" style={{ resize: 'vertical' }} />
+                  </div>
+                  <div className="form-group">
+                    <label>Official Website URL</label>
+                    <input type="url" className="form-control" value={newCollegeWebsite} onChange={(e) => setNewCollegeWebsite(e.target.value)} placeholder="e.g. https://adamasuniversity.ac.in" />
+                  </div>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label>Established Year</label>
+                      <input type="text" className="form-control" value={newCollegeEstablished} onChange={(e) => setNewCollegeEstablished(e.target.value)} placeholder="e.g. 2014" />
+                    </div>
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label>Accreditation / Rating</label>
+                      <input type="text" className="form-control" value={newCollegeRating} onChange={(e) => setNewCollegeRating(e.target.value)} placeholder="e.g. NAAC A+ or 4.8★" />
+                    </div>
+                  </div>
 
                   {/* College Logo Picker */}
                   <div className="form-group" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem', marginTop: '1rem' }}>
@@ -3476,6 +3546,10 @@ export default function App() {
                           setNewCollegeContact('');
                           setNewCollegeCover('');
                           setNewCollegeLogo('');
+                          setNewCollegeDescription('');
+                          setNewCollegeWebsite('');
+                          setNewCollegeEstablished('');
+                          setNewCollegeRating('');
                         }}
                       >
                         Cancel
@@ -3559,6 +3633,10 @@ export default function App() {
                                   setNewCollegeContact(col.contact);
                                   setNewCollegeCover(col.cover_image || '');
                                   setNewCollegeLogo(col.logo_image || '');
+                                  setNewCollegeDescription(col.description || '');
+                                  setNewCollegeWebsite(col.website || '');
+                                  setNewCollegeEstablished(col.established || '');
+                                  setNewCollegeRating(col.rating_stars || '');
                                 }}
                               >
                                 ✏️ Edit

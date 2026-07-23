@@ -418,16 +418,16 @@ app.get('/api/colleges', async (req, res) => {
 });
 
 app.post('/api/colleges', authenticateToken, requireAdmin, async (req, res) => {
-  const { college_name, location, contact, cover_image, logo_image } = req.body;
+  const { college_name, location, contact, cover_image, logo_image, description, website, established, rating_stars } = req.body;
   if (!college_name || !location || !contact) {
     return res.status(400).json({ error: 'All fields are required' });
   }
   try {
     const result = await db.run(
-      "INSERT INTO Colleges (college_name, location, contact, cover_image, logo_image) VALUES (?, ?, ?, ?, ?)",
-      [college_name, location, contact, cover_image || null, logo_image || null]
+      "INSERT INTO Colleges (college_name, location, contact, cover_image, logo_image, description, website, established, rating_stars) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [college_name, location, contact, cover_image || null, logo_image || null, description || '', website || '', established || '', rating_stars || '']
     );
-    res.status(201).json({ college_id: result.lastID, college_name, location, contact, cover_image: cover_image || null, logo_image: logo_image || null });
+    res.status(201).json({ college_id: result.lastID, college_name, location, contact, cover_image: cover_image || null, logo_image: logo_image || null, description, website, established, rating_stars });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -435,7 +435,7 @@ app.post('/api/colleges', authenticateToken, requireAdmin, async (req, res) => {
 
 app.put('/api/colleges/:id', authenticateToken, requireAdmin, async (req, res) => {
   const collegeId = parseInt(req.params.id);
-  const { college_name, location, contact, cover_image, logo_image } = req.body;
+  const { college_name, location, contact, cover_image, logo_image, description, website, established, rating_stars } = req.body;
 
   if (!college_name || !location || !contact) {
     return res.status(400).json({ error: 'College Name, Location, and Contact are required' });
@@ -446,8 +446,8 @@ app.put('/api/colleges/:id', authenticateToken, requireAdmin, async (req, res) =
     if (!college) return res.status(404).json({ error: 'College not found' });
 
     await db.run(
-      "UPDATE Colleges SET college_name = ?, location = ?, contact = ?, cover_image = ?, logo_image = ? WHERE college_id = ?",
-      [college_name, location, contact, cover_image || null, logo_image || null, collegeId]
+      "UPDATE Colleges SET college_name = ?, location = ?, contact = ?, cover_image = ?, logo_image = ?, description = ?, website = ?, established = ?, rating_stars = ? WHERE college_id = ?",
+      [college_name, location, contact, cover_image || null, logo_image || null, description || '', website || '', established || '', rating_stars || '', collegeId]
     );
 
     res.json({ message: 'College details updated successfully!' });
