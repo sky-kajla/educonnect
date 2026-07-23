@@ -1467,75 +1467,179 @@ export default function App() {
   // Views
   // ----------------------------------------------------
   const renderLanding = () => (
-    <div style={{ textAlign: 'center', padding: '3rem 1rem', maxWidth: '850px', margin: '0 auto' }}>
-      <h1 style={{ fontSize: '3.5rem', fontWeight: '800', lineHeight: '1.2', background: 'linear-gradient(135deg, var(--secondary), var(--primary), var(--accent))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '1.5rem' }}>
-        EduConnect Platform
-      </h1>
-      <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginBottom: '3rem' }}>
-        The unified educational referral, P2P developer marketplace, and live virtual classroom environment. Built for elite career growth.
-      </p>
+    <div style={{ padding: '2rem 1rem 4rem 1rem', maxWidth: '1000px', margin: '0 auto' }}>
+      
+      {/* Intro Badge */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ 
+          background: 'rgba(99, 102, 241, 0.08)', 
+          border: '1px solid rgba(99, 102, 241, 0.25)', 
+          color: '#a5b4fc', 
+          padding: '0.4rem 1rem', 
+          borderRadius: '99px', 
+          fontSize: '0.8rem', 
+          fontWeight: '600',
+          letterSpacing: '0.03em',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent)' }}></span>
+          Introducing EduConnect 2.0
+        </div>
+      </div>
 
-      <div className="stats-grid" style={{ width: '100%' }}>
-        <div className="card" style={{ cursor: 'pointer' }} onClick={() => {
+      {/* Hero Header */}
+      <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+        <h1 style={{ 
+          fontSize: '3.75rem', 
+          fontWeight: '900', 
+          lineHeight: '1.15', 
+          background: 'linear-gradient(135deg, #fff 20%, #a5b4fc 50%, var(--primary) 80%)', 
+          WebkitBackgroundClip: 'text', 
+          WebkitTextFillColor: 'transparent', 
+          marginBottom: '1.25rem',
+          letterSpacing: '-0.03em'
+        }}>
+          The Career Catalyst Platform
+        </h1>
+        <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', maxWidth: '720px', margin: '0 auto 2.5rem auto', lineHeight: '1.6' }}>
+          Refer students to accredited programs, buy/sell elite developer study notes, and join live online engineering workshops—all in one unified SaaS workspace.
+        </p>
+
+        {/* Hero CTAs */}
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          {!user ? (
+            <>
+              <button className="btn btn-primary" style={{ padding: '0.75rem 2.25rem', fontSize: '0.95rem' }} onClick={() => { setCurrentTab('auth'); setAuthView('login'); }}>
+                Get Started Now 🚀
+              </button>
+              <button className="btn btn-secondary" style={{ padding: '0.75rem 2.25rem', fontSize: '0.95rem' }} onClick={() => { setCurrentTab('colleges'); }}>
+                Explore Partner Colleges
+              </button>
+            </>
+          ) : (
+            <button className="btn btn-primary" style={{ padding: '0.75rem 2.25rem', fontSize: '0.95rem' }} onClick={() => {
+              if (user.role === 'admin') setCurrentTab('admin');
+              else if (user.role === 'teacher') setCurrentTab('teacher');
+              else setCurrentTab('colleges');
+            }}>
+              Go to my Dashboard 📊
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Metrics Section */}
+      <div className="stats-grid" style={{ marginBottom: '4rem' }}>
+        <div className="stat-card" style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-glass)', padding: '1.5rem', borderRadius: '16px' }}>
+          <span className="stat-label">Commissions Distributed</span>
+          <div className="stat-value" style={{ background: 'linear-gradient(135deg, #10b981, #34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>$50,000+</div>
+        </div>
+        <div className="stat-card" style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-glass)', padding: '1.5rem', borderRadius: '16px' }}>
+          <span className="stat-label">Partner Universities</span>
+          <div className="stat-value" style={{ background: 'linear-gradient(135deg, #06b6d4, #22d3ee)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>24+</div>
+        </div>
+        <div className="stat-card" style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-glass)', padding: '1.5rem', borderRadius: '16px' }}>
+          <span className="stat-label">Interactive Handouts</span>
+          <div className="stat-value" style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>150+</div>
+        </div>
+      </div>
+
+      {/* Core Platform Modules Title */}
+      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <h2 style={{ fontSize: '2rem', fontWeight: '800', color: '#fff', letterSpacing: '-0.02em' }}>Platform Offerings</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>Select a workspace module to begin optimizing your educational and financial operations.</p>
+      </div>
+
+      {/* 3 Main Action Cards */}
+      <div className="grid-container" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '1.5rem', marginBottom: '5rem' }}>
+        
+        {/* Module 1 */}
+        <div className="card" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', height: '100%', borderTop: '4px solid var(--primary)' }} onClick={() => {
           if (!user) {
             showToast("Please sign in to access referrals.", "warning");
             setCurrentTab("auth");
             setAuthView("login");
-          } else if (user.role === 'student') {
-            setCurrentTab("colleges");
-          } else if (user.role === 'teacher') {
-            showToast("Teachers manage classes. Redirecting to Teacher Dashboard.", "warning");
-            setCurrentTab("teacher");
-          } else if (user.role === 'admin') {
-            setCurrentTab("admin");
-            setAdminSubTab("admissions");
+          } else {
+            setCurrentTab(user.role === 'admin' ? "admin" : "colleges");
+            if (user.role === 'admin') setAdminSubTab("admissions");
           }
         }}>
-          <div style={{ color: 'var(--primary)', fontWeight: '600', textTransform: 'uppercase', fontSize: '0.8rem' }}>Admissions Referral</div>
-          <h3 style={{ fontSize: '1.5rem', margin: '0.5rem 0' }}>Earn Commission</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Refer students to fully accredited partner colleges. Get rewarded with high referral payouts credited instantly.</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <span style={{ color: 'var(--primary)', fontWeight: '700', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Admissions Referral</span>
+            <span style={{ fontSize: '1.25rem' }}>🏦</span>
+          </div>
+          <h3 style={{ fontSize: '1.35rem', marginBottom: '0.5rem', color: '#fff' }}>Earn High Commission Payouts</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: '1.5', flexGrow: 1 }}>
+            Submit verified candidate applications to premium partner colleges. Once accepted, referral commissions are deposited straight to your account wallet.
+          </p>
+          <div style={{ marginTop: '1.5rem', fontSize: '0.85rem', color: 'var(--primary)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            Open Referral Desk ➔
+          </div>
         </div>
-        <div className="card" style={{ cursor: 'pointer' }} onClick={() => {
+
+        {/* Module 2 */}
+        <div className="card" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', height: '100%', borderTop: '4px solid var(--accent)' }} onClick={() => {
           if (!user) {
             showToast("Please sign in to access the course marketplace.", "warning");
             setCurrentTab("auth");
             setAuthView("login");
-          } else if (user.role === 'student') {
-            setCurrentTab("marketplace");
           } else {
-            showToast("Marketplace is for students. Accessing console panels.", "warning");
-            setCurrentTab(user.role === 'teacher' ? "teacher" : "admin");
+            setCurrentTab(user.role === 'student' ? "marketplace" : (user.role === 'teacher' ? "teacher" : "admin"));
           }
         }}>
-          <div style={{ color: 'var(--accent)', fontWeight: '600', textTransform: 'uppercase', fontSize: '0.8rem' }}>Course Marketplace</div>
-          <h3 style={{ fontSize: '1.5rem', margin: '0.5rem 0' }}>Learn Software Skills</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Enroll in premium, developer-focused coding courses. Pay or earn using our sandbox account wallets.</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <span style={{ color: 'var(--accent)', fontWeight: '700', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>P2P marketplace</span>
+            <span style={{ fontSize: '1.25rem' }}>🛍️</span>
+          </div>
+          <h3 style={{ fontSize: '1.35rem', marginBottom: '0.5rem', color: '#fff' }}>Learn Skills & Sell Resources</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: '1.5', flexGrow: 1 }}>
+            Access top coding handouts and lecture summaries. Teachers can list handouts for purchase, allowing students to seamlessly unlock academic resources.
+          </p>
+          <div style={{ marginTop: '1.5rem', fontSize: '0.85rem', color: 'var(--accent)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            Browse Marketplace ➔
+          </div>
         </div>
-        <div className="card" style={{ cursor: 'pointer' }} onClick={() => {
+
+        {/* Module 3 */}
+        <div className="card" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', height: '100%', borderTop: '4px solid var(--secondary)' }} onClick={() => {
           if (!user) {
             showToast("Please sign in to attend online classes.", "warning");
             setCurrentTab("auth");
             setAuthView("login");
-          } else if (user.role === 'student') {
-            setCurrentTab("classes");
-          } else if (user.role === 'teacher') {
-            setCurrentTab("teacher");
           } else {
-            showToast("Admins manage database explorer. Redirecting to Admin Panel.", "warning");
-            setCurrentTab("admin");
+            setCurrentTab(user.role === 'teacher' ? "teacher" : "classes");
           }
         }}>
-          <div style={{ color: 'var(--secondary)', fontWeight: '600', textTransform: 'uppercase', fontSize: '0.8rem' }}>Online Classes</div>
-          <h3 style={{ fontSize: '1.5rem', margin: '0.5rem 0' }}>Virtual Classroom</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Join live video streams, browse interactive slides, chat in real-time, and draft notes in your study desk.</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <span style={{ color: 'var(--secondary)', fontWeight: '700', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Virtual Classrooms</span>
+            <span style={{ fontSize: '1.25rem' }}>🎥</span>
+          </div>
+          <h3 style={{ fontSize: '1.35rem', marginBottom: '0.5rem', color: '#fff' }}>Attend Live Interactive Lectures</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: '1.5', flexGrow: 1 }}>
+            Join online video classrooms. Type real-time chat messages, look over slides, and save personalized notes as you listen to the live lecture stream.
+          </p>
+          <div style={{ marginTop: '1.5rem', fontSize: '0.85rem', color: 'var(--secondary)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            Enter Classroom Hub ➔
+          </div>
+        </div>
+
+      </div>
+
+      {/* Featured University Logos Section */}
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '3rem', textAlign: 'center' }}>
+        <span style={{ textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '700' }}>
+          Affiliated Higher-Ed Partner Network
+        </span>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '3rem', flexWrap: 'wrap', marginTop: '1.5rem', opacity: 0.6 }}>
+          <span style={{ color: '#fff', fontWeight: '800', fontSize: '1.1rem', fontFamily: 'var(--font-display)' }}>🎓 Stanford University</span>
+          <span style={{ color: '#fff', fontWeight: '800', fontSize: '1.1rem', fontFamily: 'var(--font-display)' }}>🏛️ Caltech Academy</span>
+          <span style={{ color: '#fff', fontWeight: '800', fontSize: '1.1rem', fontFamily: 'var(--font-display)' }}>🔬 MIT Engineering</span>
+          <span style={{ color: '#fff', fontWeight: '800', fontSize: '1.1rem', fontFamily: 'var(--font-display)' }}>🌲 Berkeley Institute</span>
         </div>
       </div>
-      
-      {!user && (
-        <button className="btn btn-primary" style={{ marginTop: '3rem', padding: '0.8rem 2.5rem' }} onClick={() => setCurrentTab('auth')}>
-          Sign In to Access Dashboard
-        </button>
-      )}
+
     </div>
   );
 
