@@ -3851,182 +3851,322 @@ export default function App() {
 
         {/* WhatsApp Bot Control Console sub-view */}
         {adminSubTab === 'whatsapp_bot' && (
-          <div className="grid-container" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', alignItems: 'start', gap: '1.5rem' }}>
-            {/* Auto-Reply Settings & Mode Card */}
-            <div className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>
-                <h3 style={{ fontSize: '1.2rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ color: '#25D366' }}>💬</span> WhatsApp Auto-Reply Engine
-                </h3>
-                <span className={`status-badge ${waConfig.enabled ? 'approved' : 'rejected'}`}>
-                  {waConfig.enabled ? 'ACTIVE' : 'OFFLINE'}
-                </span>
-              </div>
-
-              <form onSubmit={handleUpdateWaConfig}>
-                <div className="form-group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid var(--border-glass)' }}>
-                  <div>
-                    <label style={{ margin: 0, fontWeight: '600' }}>Enable Auto-Reply Engine</label>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Bot automatically handles incoming WhatsApp queries</div>
-                  </div>
-                  <input 
-                    type="checkbox" 
-                    checked={waConfig.enabled} 
-                    onChange={(e) => setWaConfig({ ...waConfig, enabled: e.target.checked })} 
-                    style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                  />
+          <div className="grid-container" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', alignItems: 'start', gap: '2rem' }}>
+            
+            {/* Left Column: API & Webhook Configuration */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div className="card" style={{ border: '1px solid rgba(37, 211, 102, 0.15)', background: 'linear-gradient(135deg, rgba(20, 20, 25, 0.95), rgba(37, 211, 102, 0.02))' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.75rem' }}>
+                  <h3 style={{ fontSize: '1.2rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#fff' }}>
+                    <span style={{ 
+                      display: 'inline-flex', 
+                      width: '32px', 
+                      height: '32px', 
+                      borderRadius: '50%', 
+                      background: 'rgba(37, 211, 102, 0.1)', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      fontSize: '1rem',
+                      color: '#25D366'
+                    }}>💬</span>
+                    Meta API Configuration
+                  </h3>
+                  <span style={{ 
+                    fontSize: '0.7rem', 
+                    fontWeight: 'bold', 
+                    padding: '0.2rem 0.6rem', 
+                    borderRadius: '50px', 
+                    background: waConfig.enabled ? 'rgba(37, 211, 102, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                    color: waConfig.enabled ? '#25D366' : 'var(--text-muted)',
+                    border: `1px solid ${waConfig.enabled ? 'rgba(37, 211, 102, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.3rem'
+                  }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: waConfig.enabled ? '#25D366' : '#9ca3af', display: 'inline-block', animation: waConfig.enabled ? 'pulse 1.5s infinite' : 'none' }}></span>
+                    {waConfig.enabled ? 'ACTIVE ENGINE' : 'STANDBY'}
+                  </span>
                 </div>
 
-                <div className="form-group">
-                  <label>Response Logic Mode</label>
-                  <select 
-                    className="form-control" 
-                    value={waConfig.mode} 
-                    onChange={(e) => setWaConfig({ ...waConfig, mode: e.target.value })}
-                  >
-                    <option value="hybrid">Hybrid Delay Fallback (Bot replies if Human doesn't reply in time)</option>
-                    <option value="instant">Instant Initial Bot Reply (Bot answers immediately)</option>
-                    <option value="off">Disabled (Human Only)</option>
-                  </select>
-                </div>
-
-                {waConfig.mode === 'hybrid' && (
-                  <div className="form-group" style={{ background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-glass)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                      <label style={{ margin: 0 }}>Absence Delay Threshold:</label>
-                      <strong style={{ color: 'var(--accent)' }}>{waConfig.delaySeconds} Seconds</strong>
+                <form onSubmit={handleUpdateWaConfig}>
+                  {/* Enable Switch Toggle row */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid var(--border-glass)', marginBottom: '1.25rem' }}>
+                    <div>
+                      <label style={{ margin: 0, fontWeight: '600', color: '#fff', fontSize: '0.9rem' }}>Enable Auto-Reply Engine</label>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Automatically handle incoming queries from students</div>
                     </div>
-                    <input 
-                      type="range" 
-                      min="5" 
-                      max="120" 
-                      step="5"
+                    
+                    {/* Premium switch toggle pill */}
+                    <button 
+                      type="button"
+                      style={{
+                        width: '46px',
+                        height: '24px',
+                        borderRadius: '12px',
+                        background: waConfig.enabled ? '#25D366' : 'rgba(255,255,255,0.1)',
+                        position: 'relative',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
+                      }}
+                      onClick={() => setWaConfig({ ...waConfig, enabled: !waConfig.enabled })}
+                    >
+                      <div style={{
+                        width: '18px',
+                        height: '18px',
+                        borderRadius: '50%',
+                        background: '#fff',
+                        position: 'absolute',
+                        top: '3px',
+                        left: waConfig.enabled ? '25px' : '3px',
+                        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                      }} />
+                    </button>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Response Logic Mode</label>
+                    <select 
                       className="form-control" 
-                      value={waConfig.delaySeconds} 
-                      onChange={(e) => setWaConfig({ ...waConfig, delaySeconds: parseInt(e.target.value) })}
-                      style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
-                    />
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
-                      If a human admin does not reply to an incoming message within {waConfig.delaySeconds} seconds, the bot automatically steps in to answer!
-                    </div>
+                      value={waConfig.mode} 
+                      onChange={(e) => setWaConfig({ ...waConfig, mode: e.target.value })}
+                    >
+                      <option value="hybrid">Hybrid Fallback (Bot replies if Admin is absent)</option>
+                      <option value="instant">Instant Assist (Bot replies immediately)</option>
+                      <option value="off">Disabled (Human Admin Only)</option>
+                    </select>
                   </div>
-                )}
 
-                <div className="form-group" style={{ background: 'rgba(37, 211, 102, 0.05)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(37, 211, 102, 0.2)' }}>
-                  <label style={{ color: '#25D366', fontWeight: 'bold' }}>📱 Human Admin Direct WhatsApp Number</label>
-                  <input 
-                    type="text" 
-                    className="form-control" 
-                    value={waConfig.adminPhoneNumber || ''} 
-                    onChange={(e) => setWaConfig({ ...waConfig, adminPhoneNumber: e.target.value })} 
-                    placeholder="e.g. +919876543210 or +15550192" 
-                    required
-                  />
-                  <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem', display: 'block', marginTop: '0.35rem' }}>
-                    The chatbot automatically offers users a direct WhatsApp chat link to this number if they want to speak with a human!
-                  </small>
-                </div>
-
-                <div className="form-group">
-                  <label>Meta WhatsApp Webhook Token</label>
-                  <input type="text" className="form-control" value={waConfig.webhookVerifyToken} onChange={(e) => setWaConfig({ ...waConfig, webhookVerifyToken: e.target.value })} required />
-                  <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>Set this token in Meta Developer Portal Webhooks configuration.</small>
-                </div>
-
-                <div className="form-group">
-                  <label>WhatsApp Phone Number ID (Optional for Live API)</label>
-                  <input type="text" className="form-control" value={waConfig.whatsappPhoneId} onChange={(e) => setWaConfig({ ...waConfig, whatsappPhoneId: e.target.value })} placeholder="e.g. 1098237498234" />
-                </div>
-
-                <div className="form-group">
-                  <label>WhatsApp Graph API Token (Optional for Live API)</label>
-                  <input type="password" className="form-control" value={waConfig.whatsappToken} onChange={(e) => setWaConfig({ ...waConfig, whatsappToken: e.target.value })} placeholder="e.g. EAAG..." />
-                </div>
-
-                <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem', background: '#25D366', borderColor: '#25D366', color: '#000', fontWeight: 'bold' }}>
-                  Save Bot Configuration 💾
-                </button>
-              </form>
-
-              {/* Webhook URL Copy Helper Box */}
-              <div style={{ marginTop: '1.5rem', padding: '1rem', borderRadius: '8px', background: 'rgba(37, 211, 102, 0.05)', border: '1px solid rgba(37, 211, 102, 0.2)' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#25D366', marginBottom: '0.4rem' }}>🔗 Meta Webhook Integration URL</div>
-                <code style={{ fontSize: '0.75rem', background: 'rgba(0,0,0,0.5)', padding: '0.3rem 0.6rem', borderRadius: '4px', display: 'block', wordBreak: 'break-all' }}>
-                  http://localhost:5000/api/whatsapp/webhook
-                </code>
-              </div>
-            </div>
-
-            {/* Live Conversation Feed & Manual Override */}
-            <div className="card">
-              <h3 style={{ fontSize: '1.15rem', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>
-                📱 Live WhatsApp Conversation Monitor
-              </h3>
-
-              {/* Send Manual Reply Box */}
-              <form onSubmit={handleSendWaManualReply} style={{ marginBottom: '1.5rem', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-glass)' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.75rem', color: 'var(--accent)' }}>
-                  ✍️ Manual Human Admin Override (Pauses Auto-Bot)
-                </div>
-                <div className="form-group" style={{ marginBottom: '0.75rem' }}>
-                  <input type="text" className="form-control" value={waReplyPhone} onChange={(e) => setWaReplyPhone(e.target.value)} placeholder="Target Phone Number (e.g. +15550192)" required />
-                </div>
-                <div className="form-group" style={{ marginBottom: '0.75rem' }}>
-                  <textarea className="form-control" rows="2" value={waReplyMsg} onChange={(e) => setWaReplyMsg(e.target.value)} placeholder="Type manual response to send via WhatsApp..." required />
-                </div>
-                <button type="submit" className="btn btn-secondary" style={{ width: '100%', borderColor: '#25D366', color: '#25D366' }}>
-                  Send WhatsApp Message 📤
-                </button>
-              </form>
-
-              {/* Chat Feed List */}
-              <div style={{ maxHeight: '420px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingRight: '0.25rem' }}>
-                {waChats.length > 0 ? (
-                  waChats.map(c => (
-                    <div key={c.chat_id} style={{ 
-                      padding: '0.75rem', 
-                      borderRadius: '8px', 
-                      background: c.sender === 'user' ? 'rgba(255,255,255,0.04)' : c.sender === 'bot' ? 'rgba(37, 211, 102, 0.08)' : 'rgba(6, 182, 212, 0.1)',
-                      borderLeft: `4px solid ${c.sender === 'user' ? 'var(--text-muted)' : c.sender === 'bot' ? '#25D366' : 'var(--accent)'}`
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.35rem' }}>
-                        <strong style={{ color: c.sender === 'user' ? '#fff' : c.sender === 'bot' ? '#25D366' : 'var(--accent)' }}>
-                          {c.sender === 'user' ? `📱 ${c.phone_number}` : c.sender === 'bot' ? '🤖 EduBot (Auto)' : '👨‍💻 Human Admin'}
-                        </strong>
-                        <span style={{ color: 'var(--text-muted)' }}>{new Date(c.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  {waConfig.mode === 'hybrid' && (
+                    <div className="form-group" style={{ background: 'rgba(255,255,255,0.01)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-glass)', marginBottom: '1.25rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                        <label style={{ margin: 0, fontSize: '0.8rem' }}>Absence Delay Threshold:</label>
+                        <strong style={{ color: '#25D366', fontSize: '0.85rem' }}>{waConfig.delaySeconds} Seconds</strong>
                       </div>
-                      <div style={{ fontSize: '0.85rem', whiteSpace: 'pre-wrap', color: 'var(--text-main)' }}>{c.message}</div>
-                      {c.sender === 'user' && (
-                        <button 
-                          className="btn btn-secondary" 
-                          style={{ marginTop: '0.5rem', padding: '0.15rem 0.5rem', fontSize: '0.7rem' }}
-                          onClick={() => { setWaReplyPhone(c.phone_number); }}
-                        >
-                          Reply to this contact
-                        </button>
-                      )}
+                      <input 
+                        type="range" 
+                        min="5" 
+                        max="120" 
+                        step="5"
+                        className="form-control" 
+                        value={waConfig.delaySeconds} 
+                        onChange={(e) => setWaConfig({ ...waConfig, delaySeconds: parseInt(e.target.value) })}
+                        style={{ cursor: 'pointer', accentColor: '#25D366' }}
+                      />
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
+                        Bot steps in to reply to student queries if no admin sends a manual reply within {waConfig.delaySeconds}s.
+                      </div>
                     </div>
-                  ))
-                ) : (
-                  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    No WhatsApp chat messages received yet. Use the simulator below to test!
-                  </div>
-                )}
-              </div>
+                  )}
 
-              {/* Simulator Card */}
-              <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.5rem', color: '#25D366' }}>
-                  🧪 Interactive WhatsApp Webhook Simulator
-                </div>
-                <form onSubmit={handleSimulateIncomingWa} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <input type="text" className="form-control" value={simPhone} onChange={(e) => setSimPhone(e.target.value)} placeholder="Student Phone Number" required />
-                  <input type="text" className="form-control" value={simMsg} onChange={(e) => setSimMsg(e.target.value)} placeholder="Incoming Message Text" required />
-                  <button type="submit" className="btn btn-secondary" style={{ fontSize: '0.8rem' }} disabled={isSimulatingWa}>
-                    {isSimulatingWa ? 'Simulating...' : 'Simulate Incoming WhatsApp Message ⚡'}
+                  <div className="form-group" style={{ background: 'rgba(37, 211, 102, 0.03)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(37, 211, 102, 0.15)' }}>
+                    <label style={{ color: '#25D366', fontWeight: '700', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      📱 Human Admin WhatsApp Number
+                    </label>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      value={waConfig.adminPhoneNumber || ''} 
+                      onChange={(e) => setWaConfig({ ...waConfig, adminPhoneNumber: e.target.value })} 
+                      placeholder="e.g. +919876543210" 
+                      required
+                    />
+                    <small style={{ color: 'var(--text-muted)', fontSize: '0.725rem', display: 'block', marginTop: '0.4rem' }}>
+                      Users are offered a link to redirect to this number when requesting a human agent.
+                    </small>
+                  </div>
+
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', margin: '1.25rem 0', paddingTop: '1.25rem' }}>
+                    <div className="form-group">
+                      <label style={{ fontSize: '0.8rem' }}>Meta Developer Webhook Verification Token</label>
+                      <input type="text" className="form-control" value={waConfig.webhookVerifyToken} onChange={(e) => setWaConfig({ ...waConfig, webhookVerifyToken: e.target.value })} required />
+                      <small style={{ color: 'var(--text-muted)', fontSize: '0.725rem' }}>Enter this verify token inside Meta App dashboard webhooks settings.</small>
+                    </div>
+
+                    <div className="form-group">
+                      <label style={{ fontSize: '0.8rem' }}>WhatsApp Phone Number ID <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>(Live API)</span></label>
+                      <input type="text" className="form-control" value={waConfig.whatsappPhoneId} onChange={(e) => setWaConfig({ ...waConfig, whatsappPhoneId: e.target.value })} placeholder="e.g. 1098237498234" />
+                    </div>
+
+                    <div className="form-group">
+                      <label style={{ fontSize: '0.8rem' }}>WhatsApp Graph API Access Token <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>(Live API)</span></label>
+                      <input type="password" className="form-control" value={waConfig.whatsappToken} onChange={(e) => setWaConfig({ ...waConfig, whatsappToken: e.target.value })} placeholder="e.g. EAAG..." />
+                    </div>
+                  </div>
+
+                  <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem', background: '#25D366', borderColor: '#25D366', color: '#000', fontWeight: 'bold' }}>
+                    Save Developer Settings 💾
                   </button>
                 </form>
               </div>
+
+              {/* Developer Webhook Tooltip box */}
+              <div className="card" style={{ padding: '1rem', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-glass)' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#25D366', display: 'block', marginBottom: '0.4rem' }}>🔗 Callback Webhook Url</span>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <code style={{ flex: 1, fontSize: '0.75rem', background: 'rgba(0,0,0,0.4)', padding: '0.4rem 0.65rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)', display: 'block', wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                    {window.location.origin}/api/whatsapp/webhook
+                  </code>
+                  <button 
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.7rem', borderColor: 'var(--border-glass)' }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/api/whatsapp/webhook`);
+                      showToast("Callback Webhook URL copied!");
+                    }}
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Console Conversation Stream & Mock Phone simulator */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              
+              {/* WhatsApp Live Feed console */}
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', height: '520px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>
+                  <h3 style={{ fontSize: '1.1rem', margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    📱 Live Sandbox Stream
+                  </h3>
+                  <span style={{ fontSize: '0.7rem', color: '#25D366', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#25D366', animation: 'pulse 1.5s infinite' }}></span>
+                    Realtime Feed
+                  </span>
+                </div>
+
+                {/* Conversation message bubbles list */}
+                <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', paddingRight: '0.25rem', paddingBottom: '1rem' }}>
+                  {waChats.length > 0 ? (
+                    waChats.map(c => {
+                      const isUser = c.sender === 'user';
+                      const isBot = c.sender === 'bot';
+                      return (
+                        <div key={c.chat_id} style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: isUser ? 'flex-start' : 'flex-end',
+                          width: '100%'
+                        }}>
+                          {/* Sender Pill Label */}
+                          <div style={{ 
+                            fontSize: '0.7rem', 
+                            color: 'var(--text-muted)', 
+                            marginBottom: '0.25rem',
+                            display: 'flex',
+                            gap: '0.35rem',
+                            padding: '0 0.25rem'
+                          }}>
+                            {isUser ? (
+                              <span>📱 User ({c.phone_number})</span>
+                            ) : isBot ? (
+                              <span style={{ color: '#25D366' }}>🤖 AI Assist Bot</span>
+                            ) : (
+                              <span style={{ color: 'var(--accent)' }}>👨‍💻 Human Override</span>
+                            )}
+                            <span>•</span>
+                            <span>{new Date(c.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                          </div>
+
+                          {/* Message Bubble */}
+                          <div style={{
+                            padding: '0.75rem 1rem',
+                            borderRadius: isUser ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
+                            background: isUser ? 'rgba(255,255,255,0.04)' : isBot ? 'rgba(37, 211, 102, 0.08)' : 'rgba(6, 182, 212, 0.08)',
+                            border: `1px solid ${isUser ? 'rgba(255,255,255,0.05)' : isBot ? 'rgba(37, 211, 102, 0.2)' : 'rgba(6, 182, 212, 0.2)'}`,
+                            maxWidth: '85%',
+                            fontSize: '0.85rem',
+                            color: '#fff',
+                            boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                            whiteSpace: 'pre-wrap'
+                          }}>
+                            {c.message}
+                          </div>
+
+                          {/* Quick action for incoming user queries */}
+                          {isUser && (
+                            <button 
+                              className="btn btn-secondary" 
+                              style={{ padding: '0.15rem 0.5rem', fontSize: '0.65rem', marginTop: '0.35rem', borderRadius: '4px', borderColor: 'rgba(255,255,255,0.08)' }}
+                              onClick={() => { setWaReplyPhone(c.phone_number); }}
+                            >
+                              ✍️ Draft Override Reply
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div style={{ display: 'flex', flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', textAlign: 'center', padding: '2rem' }}>
+                      <span style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📭</span>
+                      <p style={{ margin: 0, fontSize: '0.85rem' }}>No WhatsApp messages detected.</p>
+                      <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.75rem' }}>Simulate a mock request below to test automated responses.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Reply Composer Override Panel */}
+                <form onSubmit={handleSendWaManualReply} style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      style={{ flex: 1, fontSize: '0.8rem', padding: '0.35rem 0.65rem' }}
+                      value={waReplyPhone} 
+                      onChange={(e) => setWaReplyPhone(e.target.value)} 
+                      placeholder="Target number (e.g. +91...)" 
+                      required 
+                    />
+                    <span style={{ fontSize: '0.7rem', alignSelf: 'center', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                      Manual Mode
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      style={{ flex: 1, fontSize: '0.8rem', padding: '0.35rem 0.65rem' }}
+                      value={waReplyMsg} 
+                      onChange={(e) => setWaReplyMsg(e.target.value)} 
+                      placeholder="Type response (suspends bot auto-responses)..." 
+                      required 
+                    />
+                    <button type="submit" className="btn btn-secondary" style={{ padding: '0.35rem 1rem', fontSize: '0.8rem', borderColor: '#25D366', color: '#25D366' }}>
+                      Send 📤
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Webhook Simulator Emulator */}
+              <div className="card" style={{ border: '1px solid var(--border-glass-hover)', background: 'rgba(255,255,255,0.01)' }}>
+                <h4 style={{ fontSize: '0.9rem', color: '#fff', margin: '0 0 0.75rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  🔬 Integration Webhook Simulator
+                </h4>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                  Emulate an incoming HTTP webhook request from Meta Cloud APIs to test how the server processes the message flow.
+                </p>
+
+                <form onSubmit={handleSimulateIncomingWa} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.2rem', display: 'block' }}>Student Phone</label>
+                      <input type="text" className="form-control" style={{ fontSize: '0.8rem', padding: '0.35rem 0.65rem' }} value={simPhone} onChange={(e) => setSimPhone(e.target.value)} placeholder="e.g. +919876543210" required />
+                    </div>
+                    <div style={{ flex: 2 }}>
+                      <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.2rem', display: 'block' }}>Simulated Message Text</label>
+                      <input type="text" className="form-control" style={{ fontSize: '0.8rem', padding: '0.35rem 0.65rem' }} value={simMsg} onChange={(e) => setSimMsg(e.target.value)} placeholder="e.g. hello, courses list?" required />
+                    </div>
+                  </div>
+                  <button type="submit" className="btn btn-secondary" style={{ width: '100%', fontSize: '0.8rem', padding: '0.4rem', border: '1px dashed var(--accent)', color: 'var(--accent)' }} disabled={isSimulatingWa}>
+                    {isSimulatingWa ? 'Simulating Webhook Request...' : 'Trigger Incoming Message Callback ⚡'}
+                  </button>
+                </form>
+              </div>
+
             </div>
           </div>
         )}
