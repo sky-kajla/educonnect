@@ -4422,20 +4422,20 @@ export default function App() {
                 🏛️ Partner Colleges
               </div>
               <div 
-                className={`sidebar-item ${currentTab === 'admin' && adminSubTab === 'users' ? 'active' : ''}`} 
-                onClick={() => { setCurrentTab('admin'); setAdminSubTab('users'); }}
+                className={`sidebar-item ${currentTab === 'admin' && adminSubTab === 'manage_users' ? 'active' : ''}`} 
+                onClick={() => { setCurrentTab('admin'); setAdminSubTab('manage_users'); fetchAdminUsers(); }}
               >
                 👥 Registered Users
               </div>
               <div 
-                className={`sidebar-item ${currentTab === 'admin' && adminSubTab === 'database' ? 'active' : ''}`} 
-                onClick={() => { setCurrentTab('admin'); setAdminSubTab('database'); }}
+                className={`sidebar-item ${currentTab === 'admin' && adminSubTab === 'db_explorer' ? 'active' : ''}`} 
+                onClick={() => { setCurrentTab('admin'); setAdminSubTab('db_explorer'); }}
               >
                 🗄️ SQL DB Explorer
               </div>
               <div 
-                className={`sidebar-item ${currentTab === 'admin' && adminSubTab === 'whatsapp' ? 'active' : ''}`} 
-                onClick={() => { setCurrentTab('admin'); setAdminSubTab('whatsapp'); }}
+                className={`sidebar-item ${currentTab === 'admin' && adminSubTab === 'whatsapp_bot' ? 'active' : ''}`} 
+                onClick={() => { setCurrentTab('admin'); setAdminSubTab('whatsapp_bot'); }}
               >
                 💬 WhatsApp Bot Config
               </div>
