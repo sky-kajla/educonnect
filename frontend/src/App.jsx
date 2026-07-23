@@ -152,6 +152,9 @@ export default function App() {
   const [sqlConsoleQuery, setSqlConsoleQuery] = useState('SELECT user_id, name, email, role, wallet_balance FROM Users');
   const [sqlConsoleOutput, setSqlConsoleOutput] = useState('');
 
+  // Admin view toggle (true = Dedicated Admin Workspace, false = Mock Student Workspace)
+  const [adminViewMode, setAdminViewMode] = useState(true);
+
   // Admin Users management state
   const [adminUsers, setAdminUsers] = useState([]);
   const [selectedAdminUser, setSelectedAdminUser] = useState(null);
@@ -455,6 +458,17 @@ export default function App() {
       setCurrentTab('home');
     }
   }, [token]);
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'admin') {
+        setAdminViewMode(true);
+        setCurrentTab('admin');
+      } else {
+        setAdminViewMode(false);
+      }
+    }
+  }, [user]);
 
   useEffect(() => {
     fetchColleges();
@@ -4306,7 +4320,42 @@ export default function App() {
   // Main SaaS layout
   // ----------------------------------------------------
   return (
-    <div className="app-layout">
+    <div className="app-layout" style={{ paddingTop: (user?.role === 'admin' && !adminViewMode) ? '38px' : '0' }}>
+      {/* Admin Testing Student Mode Banner Alert */}
+      {user?.role === 'admin' && !adminViewMode && (
+        <div style={{ 
+          background: 'linear-gradient(90deg, #b91c1c, #7f1d1d)', 
+          color: '#fff', 
+          textAlign: 'center', 
+          padding: '0.45rem 1rem', 
+          fontSize: '0.85rem', 
+          fontWeight: '700',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 9999,
+          boxShadow: '0 2px 10px rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '1rem',
+          height: '38px'
+        }}>
+          <span>⚙️ Administrator Mode: You are previewing the student workspace.</span>
+          <button 
+            className="btn btn-secondary" 
+            style={{ padding: '0.15rem 0.55rem', fontSize: '0.725rem', background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', borderRadius: '4px', cursor: 'pointer' }}
+            onClick={() => {
+              setAdminViewMode(true);
+              setCurrentTab('admin');
+            }}
+          >
+            Return to Admin Panel ➔
+          </button>
+        </div>
+      )}
+
       {/* SaaS Sidebar Navigation */}
       <aside className="sidebar">
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.75rem' }}>
@@ -4315,7 +4364,7 @@ export default function App() {
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
               </svg>
-              <span>EduConnect</span>
+              <span>{user?.role === 'admin' && adminViewMode ? 'EduConnect Admin' : 'EduConnect'}</span>
             </div>
 
             {/* Three-Dot Master Menu Button Grouped Immediately Next to EduConnect */}
@@ -4340,106 +4389,149 @@ export default function App() {
             fontWeight: 'bold', 
             padding: '0.25rem 0.65rem', 
             borderRadius: '50px', 
-            background: user?.role === 'admin' ? 'rgba(239, 68, 68, 0.15)' : user?.role === 'teacher' ? 'rgba(168, 85, 247, 0.15)' : user?.role === 'student' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255,255,255,0.05)',
-            color: user?.role === 'admin' ? 'var(--danger)' : user?.role === 'teacher' ? '#c084fc' : user?.role === 'student' ? 'var(--accent)' : 'var(--text-muted)',
-            border: `1px solid ${user?.role === 'admin' ? 'rgba(239, 68, 68, 0.3)' : user?.role === 'teacher' ? 'rgba(168, 85, 247, 0.3)' : user?.role === 'student' ? 'rgba(56, 189, 248, 0.3)' : 'rgba(255,255,255,0.1)'}`,
+            background: user?.role === 'admin' && adminViewMode ? 'rgba(239, 68, 68, 0.15)' : user?.role === 'teacher' ? 'rgba(168, 85, 247, 0.15)' : 'rgba(56, 189, 248, 0.15)',
+            color: user?.role === 'admin' && adminViewMode ? 'var(--danger)' : user?.role === 'teacher' ? '#c084fc' : 'var(--accent)',
+            border: `1px solid ${user?.role === 'admin' && adminViewMode ? 'rgba(239, 68, 68, 0.3)' : user?.role === 'teacher' ? 'rgba(168, 85, 247, 0.3)' : 'rgba(56, 189, 248, 0.3)'}`,
             display: 'inline-flex',
             alignItems: 'center',
             gap: '0.3rem'
           }}>
-            {user?.role === 'admin' ? '⚙️ Admin Workspace' : user?.role === 'teacher' ? '👨‍🏫 Teacher Workspace' : user?.role === 'student' ? '🎓 Student Workspace' : '🌐 Public Portal'}
+            {user?.role === 'admin' && adminViewMode ? '⚙️ Admin Console' : user?.role === 'teacher' ? '👨‍🏫 Teacher Console' : '🎓 Student Workspace'}
           </span>
         </div>
 
         <nav className="sidebar-menu">
-          {/* Home - Available to all */}
-          <div className={`sidebar-item ${currentTab === 'home' ? 'active' : ''}`} onClick={() => setCurrentTab('home')}>
-            <IconHome /> Home
-          </div>
-
-          {/* Student Panel Navigation Items */}
-          {(!user || user.role === 'student') && (
+          {user?.role === 'admin' && adminViewMode ? (
             <>
-              <div className={`sidebar-item ${currentTab === 'colleges' ? 'active' : ''}`} onClick={() => setCurrentTab('colleges')}>
-                <IconColleges /> Colleges
+              <div 
+                className={`sidebar-item ${currentTab === 'admin' && adminSubTab === 'overview' ? 'active' : ''}`} 
+                onClick={() => { setCurrentTab('admin'); setAdminSubTab('overview'); }}
+              >
+                📊 Dashboard Overview
               </div>
-              <div className={`sidebar-item ${currentTab === 'admissions' ? 'active' : ''}`} onClick={() => {
-                if (!user) { setCurrentTab("auth"); setAuthView("login"); } else { setCurrentTab('admissions'); }
-              }}>
-                <IconAdmissions /> Referrals
+              <div 
+                className={`sidebar-item ${currentTab === 'admin' && adminSubTab === 'admissions' ? 'active' : ''}`} 
+                onClick={() => { setCurrentTab('admin'); setAdminSubTab('admissions'); }}
+              >
+                🤝 Admissions Queue
               </div>
-              <div className={`sidebar-item ${currentTab === 'marketplace' ? 'active' : ''}`} onClick={() => {
-                if (!user) { setCurrentTab("auth"); setAuthView("login"); } else { setCurrentTab('marketplace'); }
-              }}>
-                <IconMarket /> Marketplace
+              <div 
+                className={`sidebar-item ${currentTab === 'admin' && adminSubTab === 'colleges' ? 'active' : ''}`} 
+                onClick={() => { setCurrentTab('admin'); setAdminSubTab('colleges'); }}
+              >
+                🏛️ Partner Colleges
               </div>
-              <div className={`sidebar-item ${currentTab === 'classes' ? 'active' : ''}`} onClick={() => {
-                if (!user) { setCurrentTab("auth"); setAuthView("login"); } else { setCurrentTab('classes'); }
-              }}>
-                <IconClass /> Virtual Class
+              <div 
+                className={`sidebar-item ${currentTab === 'admin' && adminSubTab === 'users' ? 'active' : ''}`} 
+                onClick={() => { setCurrentTab('admin'); setAdminSubTab('users'); }}
+              >
+                👥 Registered Users
               </div>
-              <div className={`sidebar-item ${currentTab === 'notes' ? 'active' : ''}`} onClick={() => {
-                if (!user) { setCurrentTab("auth"); setAuthView("login"); } else { setCurrentTab('notes'); }
-              }}>
-                📚 Study Notes
+              <div 
+                className={`sidebar-item ${currentTab === 'admin' && adminSubTab === 'database' ? 'active' : ''}`} 
+                onClick={() => { setCurrentTab('admin'); setAdminSubTab('database'); }}
+              >
+                🗄️ SQL DB Explorer
+              </div>
+              <div 
+                className={`sidebar-item ${currentTab === 'admin' && adminSubTab === 'whatsapp' ? 'active' : ''}`} 
+                onClick={() => { setCurrentTab('admin'); setAdminSubTab('whatsapp'); }}
+              >
+                💬 WhatsApp Bot Config
+              </div>
+              
+              <div style={{ margin: '1rem 0', borderTop: '1px solid var(--border-glass)' }}></div>
+
+              <div 
+                className="sidebar-item" 
+                style={{ color: 'var(--accent)', background: 'rgba(6, 182, 212, 0.05)', border: '1px dashed rgba(6,182,212,0.2)' }}
+                onClick={() => {
+                  setAdminViewMode(false);
+                  setCurrentTab('home');
+                }}
+              >
+                🎓 Switch to Student View
               </div>
             </>
-          )}
-
-          {/* Teacher Panel Navigation Items */}
-          {user?.role === 'teacher' && (
+          ) : (
             <>
-              <div className={`sidebar-item ${currentTab === 'teacher' ? 'active' : ''}`} onClick={() => setCurrentTab('teacher')}>
-                <IconClass /> Teacher Console
+              {/* Home - Available to all */}
+              <div className={`sidebar-item ${currentTab === 'home' ? 'active' : ''}`} onClick={() => setCurrentTab('home')}>
+                <IconHome /> Home
               </div>
-              <div className={`sidebar-item ${currentTab === 'classes' ? 'active' : ''}`} onClick={() => setCurrentTab('classes')}>
-                <IconClass /> Virtual Class
-              </div>
-              <div className={`sidebar-item ${currentTab === 'notes' ? 'active' : ''}`} onClick={() => setCurrentTab('notes')}>
-                📚 Study Notes
-              </div>
-              <div className={`sidebar-item ${currentTab === 'marketplace' ? 'active' : ''}`} onClick={() => setCurrentTab('marketplace')}>
-                <IconMarket /> Marketplace
-              </div>
-            </>
-          )}
 
-          {/* Admin Panel Navigation Items */}
-          {user?.role === 'admin' && (
-            <>
-              <div className={`sidebar-item ${currentTab === 'admin' ? 'active' : ''}`} onClick={() => setCurrentTab('admin')}>
-                <IconLedger /> Admin Panel
-              </div>
-              <div className={`sidebar-item ${currentTab === 'colleges' ? 'active' : ''}`} onClick={() => setCurrentTab('colleges')}>
-                <IconColleges /> Colleges
-              </div>
-              <div className={`sidebar-item ${currentTab === 'admissions' ? 'active' : ''}`} onClick={() => setCurrentTab('admissions')}>
-                <IconAdmissions /> Referrals
-              </div>
-              <div className={`sidebar-item ${currentTab === 'marketplace' ? 'active' : ''}`} onClick={() => setCurrentTab('marketplace')}>
-                <IconMarket /> Marketplace
-              </div>
-              <div className={`sidebar-item ${currentTab === 'classes' ? 'active' : ''}`} onClick={() => setCurrentTab('classes')}>
-                <IconClass /> Virtual Class
-              </div>
-              <div className={`sidebar-item ${currentTab === 'notes' ? 'active' : ''}`} onClick={() => setCurrentTab('notes')}>
-                📚 Study Notes
-              </div>
-              <div className={`sidebar-item ${currentTab === 'teacher' ? 'active' : ''}`} onClick={() => setCurrentTab('teacher')}>
-                <IconClass /> Teacher Console
-              </div>
-            </>
-          )}
+              {/* Admin return option when testing student view */}
+              {user?.role === 'admin' && !adminViewMode && (
+                <div 
+                  className="sidebar-item" 
+                  style={{ color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.05)', border: '1px dashed rgba(239,68,68,0.25)', fontWeight: 'bold' }}
+                  onClick={() => {
+                    setAdminViewMode(true);
+                    setCurrentTab('admin');
+                  }}
+                >
+                  ⚙️ Return to Admin Panel
+                </div>
+              )}
 
-          {/* Wallet Ledger & Profile - For all signed in users */}
-          {user && (
-            <>
-              <div className={`sidebar-item ${currentTab === 'payments' ? 'active' : ''}`} onClick={() => setCurrentTab('payments')}>
-                <IconLedger /> Wallet Ledger
-              </div>
-              <div className={`sidebar-item ${currentTab === 'profile' ? 'active' : ''}`} onClick={() => setCurrentTab('profile')}>
-                <IconProfile /> My Profile
-              </div>
+              {/* Student Panel Navigation Items */}
+              {(!user || user.role === 'student' || (user.role === 'admin' && !adminViewMode)) && (
+                <>
+                  <div className={`sidebar-item ${currentTab === 'colleges' ? 'active' : ''}`} onClick={() => setCurrentTab('colleges')}>
+                    <IconColleges /> Colleges
+                  </div>
+                  <div className={`sidebar-item ${currentTab === 'admissions' ? 'active' : ''}`} onClick={() => {
+                    if (!user) { setCurrentTab("auth"); setAuthView("login"); } else { setCurrentTab('admissions'); }
+                  }}>
+                    <IconAdmissions /> Referrals
+                  </div>
+                  <div className={`sidebar-item ${currentTab === 'marketplace' ? 'active' : ''}`} onClick={() => {
+                    if (!user) { setCurrentTab("auth"); setAuthView("login"); } else { setCurrentTab('marketplace'); }
+                  }}>
+                    <IconMarket /> Marketplace
+                  </div>
+                  <div className={`sidebar-item ${currentTab === 'classes' ? 'active' : ''}`} onClick={() => {
+                    if (!user) { setCurrentTab("auth"); setAuthView("login"); } else { setCurrentTab('classes'); }
+                  }}>
+                    <IconClass /> Virtual Class
+                  </div>
+                  <div className={`sidebar-item ${currentTab === 'notes' ? 'active' : ''}`} onClick={() => {
+                    if (!user) { setCurrentTab("auth"); setAuthView("login"); } else { setCurrentTab('notes'); }
+                  }}>
+                    📚 Study Notes
+                  </div>
+                </>
+              )}
+
+              {/* Teacher Panel Navigation Items */}
+              {user?.role === 'teacher' && (
+                <>
+                  <div className={`sidebar-item ${currentTab === 'teacher' ? 'active' : ''}`} onClick={() => setCurrentTab('teacher')}>
+                    <IconClass /> Teacher Console
+                  </div>
+                  <div className={`sidebar-item ${currentTab === 'classes' ? 'active' : ''}`} onClick={() => setCurrentTab('classes')}>
+                    <IconClass /> Virtual Class
+                  </div>
+                  <div className={`sidebar-item ${currentTab === 'notes' ? 'active' : ''}`} onClick={() => setCurrentTab('notes')}>
+                    📚 Study Notes
+                  </div>
+                  <div className={`sidebar-item ${currentTab === 'marketplace' ? 'active' : ''}`} onClick={() => setCurrentTab('marketplace')}>
+                    <IconMarket /> Marketplace
+                  </div>
+                </>
+              )}
+
+              {/* Wallet Ledger & Profile - For all signed in users */}
+              {user && (
+                <>
+                  <div className={`sidebar-item ${currentTab === 'payments' ? 'active' : ''}`} onClick={() => setCurrentTab('payments')}>
+                    <IconLedger /> Wallet Ledger
+                  </div>
+                  <div className={`sidebar-item ${currentTab === 'profile' ? 'active' : ''}`} onClick={() => setCurrentTab('profile')}>
+                    <IconProfile /> My Profile
+                  </div>
+                </>
+              )}
             </>
           )}
         </nav>
